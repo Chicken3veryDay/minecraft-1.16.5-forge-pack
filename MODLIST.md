@@ -1,22 +1,22 @@
 ﻿# Minecraft 1.16.5 Forge Pack Mod List
 
-Generated: 2026-06-03T03:01:28.4380237Z
+Generated: 2026-06-03T03:24:11.6197308Z
 
 ## Release
 
 - Minecraft: 1.16.5
 - Forge: 36.2.42
-- Asset archive: `pack-assets-bb864d08a96a.zip`
-- Asset SHA-256: `bb864d08a96aa4680f1155c07ca7567e91b7f7d4d66c4b3c00b9b79a35281088`
-- Asset URL: <https://github.com/Chicken3veryDay/minecraft-1.16.5-forge-pack/releases/download/v2026.06.01/pack-assets-bb864d08a96a.zip>
-- Minimal installer: `minimal-pack-5e39f6a3d480.zip`
-- Minimal installer SHA-256: `5e39f6a3d480e044036bfa8f9f3b73eec235c47b78066699b87898a3d958e78b`
-- Crafting fix: Polymorph removed from client and server because it changes recipe selection/workbench result synchronization and matches the ghost/empty crafting-result symptom. This is the current strongest fix candidate; final confirmation comes from live server crafting verification after deployment.
+- Asset archive: `pack-assets-8f3e23a358c3.zip`
+- Asset SHA-256: `8f3e23a358c3b3d3f07ab784f9aa9a4b3bcf5eb5ede043af2a589e91d97858a3`
+- Asset URL: <https://github.com/Chicken3veryDay/minecraft-1.16.5-forge-pack/releases/download/v2026.06.01/pack-assets-8f3e23a358c3.zip>
+- Minimal installer: `minimal-pack-70fd820824de.zip`
+- Minimal installer SHA-256: `70fd820824de9c3dd8e7215cba05bcac5d44a96cd4d5ccad2570b097eadfe71d`
+- Crafting fix: Polymorph is removed from client and server because it changes recipe selection/workbench result synchronization and matches the ghost/empty crafting-result symptom. Client Crafting is also removed from the client pack as a precaution because it modifies client-side crafting behavior and is unnecessary for server play. The latest login screenshot was caused by a stale local client install, not by the final server pack.
 - Previous-version restore: Previous-version mods were restored from the old GitHub release Mods.zip asset by side. Examples restored include JourneyMap, Jade, JEI, MouseTweaks, AmbientSounds, Oculus/Embeddium UI/performance client mods, plus Spark, AI Improvements, Connectivity, FastWorkbench, FastSuite, FastFurnace, Let Me Despawn, SmoothChunk, and TreeHarvester on the server side.
-- Validation: Dependency audit reads each jar META-INF/mods.toml and manifest Implementation-Version. Latest audit: no missing required dependencies, no incompatible required dependency ranges, no duplicate mod IDs, and no Polymorph jar present on either side.
+- Validation: Dependency audit reads each jar META-INF/mods.toml and manifest Implementation-Version. Latest audit after removing Client Crafting: no missing required dependencies, no incompatible required dependency ranges, no duplicate mod IDs, no Polymorph jar present on either side, and no Client Crafting jar present in Client.
 - Note: Chaos Awakens was removed from client and server because it has an unsatisfiable Geckolib conflict with Dungeons Gear in this pack: Chaos Awakens requires Geckolib [3.0.94,3.0.98), while Dungeons Gear requires Geckolib [3.0.103,). Craziniess Awakened remains installed. Legendary Tooltips, Iceberg, and Prism are client-only in this pack; Legendary Tooltips crashes a dedicated server by loading Minecraft client classes, so those jars were removed from Server and kept in Client.
 
-## Client Mods (151)
+## Client Mods (150)
 
 | File | Size | SHA-256 |
 |---|---:|---|
@@ -58,7 +58,6 @@ Generated: 2026-06-03T03:01:28.4380237Z
 | `catalogue-1.6.1-1.16.5.jar` | 97637 | `89abfb4277aa3dee8730df138ebf393aeae479f711ebbea8ede5312b48e3214b` |
 | `champions-forge-1.16.5-2.0.1.16.jar` | 222925 | `3998f26510dc492304111e4add8dd7cdc58d69dba6c47ef0ed76f86d25d18cbf` |
 | `citadel-1.8.1-1.16.5.jar` | 482439 | `4c78a18f309aa9895ff6ef70fc3140c436c729fa84c832770ec30970daaab88a` |
-| `clientcrafting-1.16.5-1.6.jar` | 9907 | `2492affa2fa17f8ebae5769e8026a519b85870acfc35ffac868522af5318b5c0` |
 | `Clumps-6.0.0.28.jar` | 18397 | `f69abc1d44277b495004fd6d67d0f95f2574581bb26e55543f2dcd2153cd92d0` |
 | `collective-1.16.5-5.49.jar` | 189273 | `eea0121bbad3eefbbe0283d18758decba872e1d2f1fef8352a24f0a9f9d586d7` |
 | `configured-1.5.4-1.16.5.jar` | 131868 | `6c356a0422a650304b97a6ddadd0ccfa036031f2cd23d067e9ceba5c56b3e0d5` |

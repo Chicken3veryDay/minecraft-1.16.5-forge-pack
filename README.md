@@ -7,7 +7,7 @@ This repository hosts release assets for the minimal installer ZIP and hosted pa
 - Minecraft: 1.16.5
 - Forge: 36.2.42
 
-Crafting fix candidate in the current pack: Polymorph was removed from client and server because it hooks recipe manager/workbench/result synchronization and matched the many-crafting-UI ghost-result symptom.
+Crafting fix candidates in the current pack: Polymorph was removed from client and server because it hooks recipe manager/workbench/result synchronization and matched the many-crafting-UI ghost-result symptom. Client Crafting was also removed from the client pack because it modifies client-side crafting behavior and is unnecessary for server play.
 
 Boot fix in the current pack: Chaos Awakens was removed because it requires Geckolib below 3.0.98, while Dungeons Gear requires Geckolib 3.0.103 or newer. Craziniess Awakened remains installed.
 
