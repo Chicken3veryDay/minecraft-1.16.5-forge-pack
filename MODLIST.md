@@ -1,22 +1,22 @@
 ﻿# Minecraft 1.16.5 Forge Pack Mod List
 
-Generated: 2026-06-03T01:41:24.6758466Z
+Generated: 2026-06-03T02:12:25.3825171Z
 
 ## Release
 
 - Minecraft: 1.16.5
 - Forge: 36.2.42
-- Asset archive: `pack-assets-5dc622dbbe9c.zip`
-- Asset SHA-256: `5dc622dbbe9c247e9af59d522ea3b9b4ee724b986b980936f610d844a2ec4403`
-- Asset URL: <https://github.com/Chicken3veryDay/minecraft-1.16.5-forge-pack/releases/download/v2026.06.01/pack-assets-5dc622dbbe9c.zip>
-- Minimal installer: `minimal-pack-610e5198eecb.zip`
-- Minimal installer SHA-256: `610e5198eecbd7a09211a354defce80cef342ff21d0ce6982929315f02ffab59`
+- Asset archive: `pack-assets-a6292b81d78e.zip`
+- Asset SHA-256: `a6292b81d78e03df1c5d21d5fbc13b9bce2614cd1460929f5d10714f604f6734`
+- Asset URL: <https://github.com/Chicken3veryDay/minecraft-1.16.5-forge-pack/releases/download/v2026.06.01/pack-assets-a6292b81d78e.zip>
+- Minimal installer: `minimal-pack-f4ea494062b5.zip`
+- Minimal installer SHA-256: `f4ea494062b5389c7810386b334e7169afc8d9118b1f8b957426f5af034c090c`
 - Crafting fix: Polymorph removed from client and server because it changes recipe selection/workbench result synchronization and matches the ghost/empty crafting-result symptom. This is the current strongest fix candidate; final confirmation comes from live server crafting verification after deployment.
 - Previous-version restore: Previous-version mods were restored from the old GitHub release Mods.zip asset by side. Examples restored include JourneyMap, Jade, JEI, MouseTweaks, AmbientSounds, Oculus/Embeddium UI/performance client mods, plus Spark, AI Improvements, Connectivity, FastWorkbench, FastSuite, FastFurnace, Let Me Despawn, SmoothChunk, and TreeHarvester on the server side.
-- Validation: Dependency audit reads each jar META-INF/mods.toml. Latest audit: no missing required dependencies, no duplicate mod IDs, and no Polymorph jar present on either side.
-- Note: Screenshot batch added where 1.16.5 Forge-compatible: Corpse, Pick Up Notifier, Goblin Traders, Client Crafting, Gateways to Eternity, Farsight, Smarter Farmers, Aquamirae, Silent Gear, Item Collectors, ATO/All the Ores, Realm RPG Fallen Adventurers, The Hordes, It Takes a Pillage, Chunk Sending, Better FPS Render Distance, Legendary Tooltips, Mobs Properties Randomness, Remodifier, plus required libraries such as Obscure API, SuperMartijn642 Core/Config Lib, Atlas Lib, Prism, Iceberg, and InsaneLib. Not added because no 1.16.5 Forge-compatible mod file was available: Bosses of Mass Destruction, Dungeons Dimensions Nether, ImmediatelyFast. King of the Nether is a resource pack and its exact project targets newer Minecraft versions, not this 1.16.5 Forge pack. Client Crafting was added per request but is on the crafting verification watch list.
+- Validation: Dependency audit reads each jar META-INF/mods.toml and manifest Implementation-Version. Latest audit: no missing required dependencies, no incompatible required dependency ranges, no duplicate mod IDs, and no Polymorph jar present on either side.
+- Note: Chaos Awakens was removed from client and server because it has an unsatisfiable Geckolib conflict with Dungeons Gear in this pack: Chaos Awakens requires Geckolib [3.0.94,3.0.98), while Dungeons Gear requires Geckolib [3.0.103,). Craziniess Awakened remains installed.
 
-## Client Mods (152)
+## Client Mods (151)
 
 | File | Size | SHA-256 |
 |---|---:|---|
@@ -57,7 +57,6 @@ Generated: 2026-06-03T01:41:24.6758466Z
 | `carryon-1.16.5-1.15.6.24.jar` | 321769 | `0e294b86d831f5afa162c1d14cd1832541768341f92493ded9e7eb0377d06d2e` |
 | `catalogue-1.6.1-1.16.5.jar` | 97637 | `89abfb4277aa3dee8730df138ebf393aeae479f711ebbea8ede5312b48e3214b` |
 | `champions-forge-1.16.5-2.0.1.16.jar` | 222925 | `3998f26510dc492304111e4add8dd7cdc58d69dba6c47ef0ed76f86d25d18cbf` |
-| `chaosawakens-1.16.5-0.12.1.1.jar` | 11309977 | `210a9a5a4a7d0f6eb6911e1405da82b9fac990cf176f4c658f53ae443de2fb73` |
 | `citadel-1.8.1-1.16.5.jar` | 482439 | `4c78a18f309aa9895ff6ef70fc3140c436c729fa84c832770ec30970daaab88a` |
 | `clientcrafting-1.16.5-1.6.jar` | 9907 | `2492affa2fa17f8ebae5769e8026a519b85870acfc35ffac868522af5318b5c0` |
 | `Clumps-6.0.0.28.jar` | 18397 | `f69abc1d44277b495004fd6d67d0f95f2574581bb26e55543f2dcd2153cd92d0` |
@@ -96,7 +95,7 @@ Generated: 2026-06-03T01:41:24.6758466Z
 | `ftb-library-forge-1605.3.4-build.90.jar` | 585125 | `f2bd3aa612d959eb10e7cb9b212c11cd9b6625fc9172ecbc24c9b804f0fe9e8b` |
 | `ftb-ultimine-forge-1605.3.1-build.45.jar` | 78597 | `3a045ebcdf4ce291022497b1889054d0dd6137075dffc3a3abfc3682fdcf9bee` |
 | `GatewaysToEternity-1.16.5-1.0.2.jar` | 564724 | `7cf60c0e09ebc4d5e9929c426e4c202dfd857c93f37241d31d65e434c27ae41f` |
-| `geckolib-forge-1.16.5-3.0.97.jar` | 3532686 | `566904cb0b0df6feac823547fd58e2a44caa1efd1cab183c8d712199ae3b6f53` |
+| `geckolib-forge-1.16.5-3.0.106.jar` | 3559283 | `e130cde6859858ac2a5f8d641794d97d85400c8925c3b46fb19e1a2ea286a6ca` |
 | `goblintraders-1.7.3-1.16.5.jar` | 428711 | `e2c1168ccd3f072257825f4a61e6175c40a3cf59dc124f9d54b59361fb20616b` |
 | `guardvillagers-1.16.5.1.2.4.jar` | 188171 | `7b7764c511271db4cc5806768ca1d2c68522cae7ba415d6249d1756915a5c4ef` |
 | `Hats-1.16.5-10.3.4.jar` | 1544164 | `f85f3af9222a2752f5620e5c1c225f4a0af2e610b96180c821770f0723194617` |
@@ -150,7 +149,7 @@ Generated: 2026-06-03T01:41:24.6758466Z
 | `savageandravage-1.16.5-3.2.0.jar` | 1271118 | `4bb51b03efb4efd0fdb6d750789d13f87522e4ab4e2c23f53ebbb842b2bc4151` |
 | `ScalingHealth-1.16.5-4.1.5+11.jar` | 513375 | `f0d7538b7dbdbce23d369cec592fe7ad2c60951aa38b73ef1b5ec8f2d246f04c` |
 | `silent-gear-1.16.5-2.6.30.jar` | 2583204 | `cdcdfd9d45d2a18a5a35e04f9f812bbde9a4ad373445aac644d623f1c3dfc17c` |
-| `silent-lib-1.16.5-4.10.0.jar` | 234432 | `300d90f4fbc935e0baee2124288fda63528bab291c56f0414045a81af2460a36` |
+| `silent-lib-1.16.3-4.9.6.jar` | 247616 | `ccd8757d3a8b5447bb4192c1966099cd3671b2f7e49fb0d889f32359ad2d2d45` |
 | `smarterfarmers-1.16.5-1.2.1.jar` | 33716 | `405f87a08ea15ed6bc4d1c57dc8d4d6a5b6b7898a51a9b30a88fd31ebdd6e34a` |
 | `SpartanWeaponry-1.16.5-2.2.2.jar` | 1660410 | `7c956831c3a280b04b6227b05178b82429623ffed539f919a4e90c65763a8334` |
 | `SpawnerFix-1.16.2-1.0.0.3.jar` | 63376 | `525aa0af91fe30af5a3b265837803ab08024b06948ea5168d7b0e434d4981c47` |
@@ -173,7 +172,7 @@ Generated: 2026-06-03T01:41:24.6758466Z
 | `WitherSkeletonTweaks-1.16.5-5.4.1.jar` | 27401 | `6498891037906d09c323de6378042a8772c0748838665a257e12b4c5531c34b3` |
 | `YungsApi-1.16.4-Forge-13.jar` | 106058 | `2782ffcfd0501f24089b62cc2cd001864b0e3c122c5b8ecb3dc1531bf59884c6` |
 
-## Server Mods (139)
+## Server Mods (138)
 
 | File | Size | SHA-256 |
 |---|---:|---|
@@ -212,7 +211,6 @@ Generated: 2026-06-03T01:41:24.6758466Z
 | `caelus-forge-1.16.5-2.1.3.2.jar` | 41824 | `f8536bca6f45ab90388fe49b37d8612f2d27d3213d1df6d0309830cb5f99da48` |
 | `carryon-1.16.5-1.15.6.24.jar` | 321769 | `0e294b86d831f5afa162c1d14cd1832541768341f92493ded9e7eb0377d06d2e` |
 | `champions-forge-1.16.5-2.0.1.16.jar` | 222925 | `3998f26510dc492304111e4add8dd7cdc58d69dba6c47ef0ed76f86d25d18cbf` |
-| `chaosawakens-1.16.5-0.12.1.1.jar` | 11309977 | `210a9a5a4a7d0f6eb6911e1405da82b9fac990cf176f4c658f53ae443de2fb73` |
 | `chunksending-1.16.5-2.5.jar` | 13027 | `fbc4293c00b33aba3c292521058b9880eeeeb652893e549727927a3d08683b0c` |
 | `Chunky-1.2.123.jar` | 210906 | `ea25f65d7c8942442b8feff17a1c86a5e5f6706bf95ff17ee7711ea193721e37` |
 | `citadel-1.8.1-1.16.5.jar` | 482439 | `4c78a18f309aa9895ff6ef70fc3140c436c729fa84c832770ec30970daaab88a` |
@@ -247,7 +245,7 @@ Generated: 2026-06-03T01:41:24.6758466Z
 | `ftb-library-forge-1605.3.4-build.90.jar` | 585125 | `f2bd3aa612d959eb10e7cb9b212c11cd9b6625fc9172ecbc24c9b804f0fe9e8b` |
 | `ftb-ultimine-forge-1605.3.1-build.45.jar` | 78597 | `3a045ebcdf4ce291022497b1889054d0dd6137075dffc3a3abfc3682fdcf9bee` |
 | `GatewaysToEternity-1.16.5-1.0.2.jar` | 564724 | `7cf60c0e09ebc4d5e9929c426e4c202dfd857c93f37241d31d65e434c27ae41f` |
-| `geckolib-forge-1.16.5-3.0.97.jar` | 3532686 | `566904cb0b0df6feac823547fd58e2a44caa1efd1cab183c8d712199ae3b6f53` |
+| `geckolib-forge-1.16.5-3.0.106.jar` | 3559283 | `e130cde6859858ac2a5f8d641794d97d85400c8925c3b46fb19e1a2ea286a6ca` |
 | `goblintraders-1.7.3-1.16.5.jar` | 428711 | `e2c1168ccd3f072257825f4a61e6175c40a3cf59dc124f9d54b59361fb20616b` |
 | `guardvillagers-1.16.5.1.2.4.jar` | 188171 | `7b7764c511271db4cc5806768ca1d2c68522cae7ba415d6249d1756915a5c4ef` |
 | `Hats-1.16.5-10.3.4.jar` | 1544164 | `f85f3af9222a2752f5620e5c1c225f4a0af2e610b96180c821770f0723194617` |
@@ -293,7 +291,7 @@ Generated: 2026-06-03T01:41:24.6758466Z
 | `savageandravage-1.16.5-3.2.0.jar` | 1271118 | `4bb51b03efb4efd0fdb6d750789d13f87522e4ab4e2c23f53ebbb842b2bc4151` |
 | `ScalingHealth-1.16.5-4.1.5+11.jar` | 513375 | `f0d7538b7dbdbce23d369cec592fe7ad2c60951aa38b73ef1b5ec8f2d246f04c` |
 | `silent-gear-1.16.5-2.6.30.jar` | 2583204 | `cdcdfd9d45d2a18a5a35e04f9f812bbde9a4ad373445aac644d623f1c3dfc17c` |
-| `silent-lib-1.16.5-4.10.0.jar` | 234432 | `300d90f4fbc935e0baee2124288fda63528bab291c56f0414045a81af2460a36` |
+| `silent-lib-1.16.3-4.9.6.jar` | 247616 | `ccd8757d3a8b5447bb4192c1966099cd3671b2f7e49fb0d889f32359ad2d2d45` |
 | `smarterfarmers-1.16.5-1.2.1.jar` | 33716 | `405f87a08ea15ed6bc4d1c57dc8d4d6a5b6b7898a51a9b30a88fd31ebdd6e34a` |
 | `smoothchunk1.16.5-2.0.jar` | 14157 | `e7ab1d4fd31ee8e8be75a711df7b403d54a86514432302c8ad79a87851a2bc26` |
 | `spark-1.9.1-forge.jar` | 3157081 | `e0e10f3ba3c4169d4fe1408f4f9b081bb1f36e4cdf3777a26beab816057817e3` |
