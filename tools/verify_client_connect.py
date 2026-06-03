@@ -11,6 +11,7 @@ import subprocess
 import sys
 import time
 import uuid
+import hashlib
 
 import minecraft_launcher_lib
 from minecraft_launcher_lib import microsoft_account
@@ -19,6 +20,8 @@ import paramiko
 
 MINECRAFT_VERSION = "1.16.5-forge-36.2.42"
 MINECRAFT_LAUNCHER_CLIENT_ID = "00000000402b5328"
+PACK_ROOT = pathlib.Path(__file__).resolve().parents[1]
+MANIFEST_PATH = PACK_ROOT / ".pack-manifest.json"
 
 
 def read_password(args: argparse.Namespace) -> str | None:
@@ -71,6 +74,63 @@ def remote_exec(client: paramiko.SSHClient, command: str) -> str:
 
 def shell_quote(value: str) -> str:
     return "'" + value.replace("'", "'\"'\"'") + "'"
+
+
+def file_sha256(path: pathlib.Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def expected_manifest_section(manifest: dict, section: str) -> dict[str, str]:
+    return {str(item["name"]): item["sha256"].lower() for item in manifest.get(section, [])}
+
+
+def verify_client_modset(minecraft_dir: pathlib.Path) -> None:
+    if not MANIFEST_PATH.exists():
+        print(f"warn: manifest missing ({MANIFEST_PATH}); skipping pack integrity pre-check.")
+        return
+
+    manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8-sig"))
+    expected = expected_manifest_section(manifest, "client")
+    mods_dir = minecraft_dir / "mods"
+    if not mods_dir.exists():
+        raise RuntimeError(f"Client mods folder is missing: {mods_dir}")
+
+    actual_mods = {path.name: path for path in mods_dir.glob("*.jar")}
+    mismatches: list[str] = []
+    extras: list[str] = []
+
+    for name, expected_hash in expected.items():
+        if name not in actual_mods:
+            mismatches.append(f"missing required mod {name}")
+            continue
+        actual_hash = file_sha256(actual_mods[name]).lower()
+        if actual_hash != expected_hash.lower():
+            mismatches.append(f"hash mismatch {name}: expected {expected_hash}, found {actual_hash}")
+
+    extras = sorted(path for path in actual_mods if path not in expected)
+
+    if mismatches or extras:
+        installer = PACK_ROOT / "Install-Minecraft-Pack.ps1"
+        message = ["Local client mods do not match this pack's manifest and will fail Forge handshake."]
+        if mismatches:
+            message.append("  mismatches:")
+            message.extend([f"   - {item}" for item in mismatches[:80]])
+        if extras:
+            message.append("  extra jars (not in manifest):")
+            message.extend([f"   - {item}" for item in extras[:40]])
+            if len(extras) > 40:
+                message.append("   - ...")
+
+        message.append("")
+        message.append(
+            f'Run "powershell -NoProfile -ExecutionPolicy Bypass -File \"{installer}\" -Force" '
+            "to rebuild the local client mods from manifest."
+        )
+        raise RuntimeError("\\n".join(message))
 
 
 class DataBlob(ctypes.Structure):
@@ -296,6 +356,7 @@ def main() -> int:
     parser.add_argument("--minecraft-dir", type=pathlib.Path, default=pathlib.Path(os.environ["APPDATA"]) / ".minecraft")
     parser.add_argument("--offline-username", help="Use an offline-mode verifier identity instead of a launcher token.")
     parser.add_argument("--offline-uuid", help="Optional UUID for --offline-username. Defaults to the standard offline UUID.")
+    parser.add_argument("--skip-pack-check", action="store_true", help="Skip client mod hash verification before launch.")
     parser.add_argument("--remote-host")
     parser.add_argument("--remote-port", type=int, default=22)
     parser.add_argument("--remote-user", default="root")
@@ -308,6 +369,9 @@ def main() -> int:
     args = parser.parse_args()
 
     minecraft_dir = args.minecraft_dir.resolve()
+    if not args.skip_pack_check:
+        verify_client_modset(minecraft_dir)
+
     if args.offline_username:
         account = offline_account(args.offline_username, args.offline_uuid)
         print("auth: using explicit offline-mode verifier identity")
