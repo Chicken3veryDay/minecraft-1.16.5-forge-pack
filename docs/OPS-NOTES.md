@@ -46,3 +46,5 @@ The working fix for the Forge disconnect was replacing the client/server Invento
   - `Disconnecting VANILLA connection attempt`
   indicate the joining client is not running the matching Forge clientmodset. Re-run the installer on that machine:
   `powershell -NoProfile -ExecutionPolicy Bypass -File ..\Install-Minecraft-Pack.ps1 -Force`.
+- Client installs now include a hard local launch gate: the installer fails unless `ChickenEveryDay Forge` is selected for `1.16.5-forge-36.2.42` and the installed `mods` jars exactly match `.pack-manifest.json`. To validate a friend's already-installed client without changing files, run:
+  `powershell -NoProfile -ExecutionPolicy Bypass -File ..\Install-Minecraft-Pack.ps1 -VerifyOnly`.

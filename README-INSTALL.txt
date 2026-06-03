@@ -27,6 +27,9 @@ Before installing the pack, the installer backs up any existing `%appdata%\.mine
 
 At the end, the installer prints a status report showing which steps passed or failed. It also checks whether the configured Minecraft server answers TCP connections and whether Minecraft Launcher has an active account. If the server check passes but `Detect launcher account` fails, open Minecraft Launcher, sign in to the Java Edition account, close the launcher, and then launch the `ChickenEveryDay Forge` profile.
 
+The installer also refuses a successful client install unless the local launcher has `ChickenEveryDay Forge` selected for Forge `1.16.5-forge-36.2.42` and `%appdata%\.minecraft\mods` exactly matches the manifest jar names and SHA-256 hashes. To check an installed client without reinstalling, run:
+  powershell -NoProfile -ExecutionPolicy Bypass -File .\Install-Minecraft-Pack.ps1 -VerifyOnly
+
 The installer adds this server to Multiplayer automatically:
   ChickenEveryDay Modded - 192.3.179.150:25565
 
@@ -86,7 +89,13 @@ If a friend gets "Disconnected" or the server logs show `Disconnecting VANILLA c
 
 1. Close Minecraft Launcher.
 2. Run `powershell -NoProfile -ExecutionPolicy Bypass -File .\Install-Minecraft-Pack.ps1 -Force`.
-3. Start the `ChickenEveryDay Forge` profile.
+3. Confirm the status report includes `[PASS] Verify Forge profile and mod hashes`.
+4. Start the `ChickenEveryDay Forge` profile.
+
+If they already reinstalled and still cannot join, have them run:
+  powershell -NoProfile -ExecutionPolicy Bypass -File .\Install-Minecraft-Pack.ps1 -VerifyOnly
+
+Do not troubleshoot the server until that check passes on the friend's machine.
 
 Manual server install
 ---------------------

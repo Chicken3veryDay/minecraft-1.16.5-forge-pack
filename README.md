@@ -14,3 +14,5 @@ Boot fix in the current pack: Chaos Awakens was removed because it requires Geck
 Server side fix in the current pack: Legendary Tooltips, Iceberg, and Prism are client-only here. They stay in Client, but were removed from Server after Legendary Tooltips loaded Minecraft client classes on the dedicated server.
 
 Connection fix in the current pack: Inventory Pets now matches the VPS server jar (`inventorypets-1.16.5-2.2.jar`, SHA-256 `8bbb68cf77855e560406bf9d646a32b2452857709f41cf6c997d4a99210e99b1`) on both client and server, resolving the Forge mismatched mod channel disconnect.
+
+Client guard in the current installer: client installs and `-VerifyOnly` now require the selected `ChickenEveryDay Forge` profile plus exact installed client mod jar names and SHA-256 hashes before reporting success.

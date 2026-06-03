@@ -5,6 +5,7 @@ param(
     [switch]$SkipForgeInstall,
     [switch]$NoShader,
     [switch]$Force,
+    [switch]$VerifyOnly,
     [string]$AssetBaseUrl,
     [switch]$SkipServerEntry,
     [switch]$SkipConnectionCheck,
@@ -1459,6 +1460,165 @@ function Copy-ManifestSection {
     }
 }
 
+function Format-LimitedList {
+    param(
+        [object[]]$Items,
+        [int]$Limit = 40
+    )
+
+    $values = @($Items | Select-Object -First $Limit | ForEach-Object { [string]$_ })
+    if ($Items.Count -gt $Limit) {
+        $values += "+$($Items.Count - $Limit) more"
+    }
+
+    $values -join ', '
+}
+
+function Assert-InstalledManifestSection {
+    param(
+        [object]$Manifest,
+        [string]$Section,
+        [string]$Destination,
+        [switch]$NoExtraJars
+    )
+
+    $items = @($Manifest.$Section)
+    if ($items.Count -eq 0) {
+        throw "Manifest section '$Section' has no files."
+    }
+
+    if (-not (Test-Path -LiteralPath $Destination)) {
+        throw "Installed $Section folder is missing: $Destination"
+    }
+
+    $expectedNames = @{}
+    $missing = New-Object System.Collections.Generic.List[string]
+    $mismatched = New-Object System.Collections.Generic.List[string]
+
+    foreach ($item in $items) {
+        $name = [string]$item.name
+        $expectedNames[$name.ToLowerInvariant()] = $true
+        $target = Join-Path $Destination $name
+
+        if (-not (Test-Path -LiteralPath $target)) {
+            $missing.Add($name) | Out-Null
+            continue
+        }
+
+        $actual = Get-FileHashSha256 -Path $target
+        $expected = ([string]$item.sha256).ToLowerInvariant()
+        if ($actual -ne $expected) {
+            $mismatched.Add("$name expected $expected got $actual") | Out-Null
+        }
+    }
+
+    $extraJars = @()
+    if ($NoExtraJars) {
+        $actualJars = @(Get-ChildItem -LiteralPath $Destination -Filter '*.jar' -File -ErrorAction SilentlyContinue)
+        $extraJars = @($actualJars | Where-Object { -not $expectedNames.ContainsKey($_.Name.ToLowerInvariant()) } | Sort-Object Name)
+    }
+
+    if (($missing.Count -gt 0) -or ($mismatched.Count -gt 0) -or ($extraJars.Count -gt 0)) {
+        $details = New-Object System.Collections.Generic.List[string]
+        if ($missing.Count -gt 0) {
+            $details.Add("missing ($($missing.Count)): $(Format-LimitedList -Items @($missing.ToArray()))") | Out-Null
+        }
+        if ($mismatched.Count -gt 0) {
+            $details.Add("hash mismatch ($($mismatched.Count)): $(Format-LimitedList -Items @($mismatched.ToArray()))") | Out-Null
+        }
+        if ($extraJars.Count -gt 0) {
+            $extraJarNames = @($extraJars | Select-Object -ExpandProperty Name)
+            $details.Add("extra jars not in manifest ($($extraJars.Count)): $(Format-LimitedList -Items $extraJarNames)") | Out-Null
+        }
+
+        throw "Installed $Section files do not match the pack manifest in ${Destination}. $($details -join ' ')"
+    }
+
+    "$Section verified: $($items.Count) file(s)"
+}
+
+function Assert-ForgeLauncherProfileReady {
+    param([string]$MinecraftDir)
+
+    $versionJson = Join-Path $MinecraftDir "versions\$ForgeProfile\$ForgeProfile.json"
+    if (-not (Test-Path -LiteralPath $versionJson)) {
+        throw "Forge $ForgeProfile is not installed. Re-run this installer without -SkipForgeInstall."
+    }
+
+    $profilePaths = @(
+        (Join-Path $MinecraftDir 'launcher_profiles.json'),
+        (Join-Path $MinecraftDir 'launcher_profiles_microsoft_store.json')
+    )
+    $existingProfilePaths = @($profilePaths | Where-Object { Test-Path -LiteralPath $_ })
+    if ($existingProfilePaths.Count -eq 0) {
+        throw "No Minecraft launcher profile file was found in $MinecraftDir."
+    }
+
+    $checked = New-Object System.Collections.Generic.List[string]
+    $errors = New-Object System.Collections.Generic.List[string]
+
+    foreach ($profilesPath in $existingProfilePaths) {
+        $leaf = Split-Path -Leaf $profilesPath
+        try {
+            $profilesData = Get-Content -LiteralPath $profilesPath -Raw | ConvertFrom-Json
+        }
+        catch {
+            $errors.Add("${leaf}: could not parse launcher profiles JSON: $($_.Exception.Message)") | Out-Null
+            continue
+        }
+
+        if ($null -eq $profilesData.profiles) {
+            $errors.Add("${leaf}: missing profiles object") | Out-Null
+            continue
+        }
+
+        $matchingProfileIds = New-Object System.Collections.Generic.List[string]
+        foreach ($profileProperty in $profilesData.profiles.PSObject.Properties) {
+            $profile = $profileProperty.Value
+            if (($profile.name -eq 'ChickenEveryDay Forge') -and ($profile.lastVersionId -eq $ForgeProfile)) {
+                $matchingProfileIds.Add($profileProperty.Name) | Out-Null
+            }
+        }
+
+        if ($matchingProfileIds.Count -eq 0) {
+            $errors.Add("${leaf}: missing ChickenEveryDay Forge profile for $ForgeProfile") | Out-Null
+            continue
+        }
+
+        $selectedProfile = [string]$profilesData.selectedProfile
+        if ([string]::IsNullOrWhiteSpace($selectedProfile)) {
+            $errors.Add("${leaf}: selectedProfile is not set to ChickenEveryDay Forge") | Out-Null
+            continue
+        }
+
+        if (-not $matchingProfileIds.Contains($selectedProfile)) {
+            $errors.Add("${leaf}: selectedProfile is '$selectedProfile', expected one of $($matchingProfileIds -join ', ')") | Out-Null
+            continue
+        }
+
+        $checked.Add("${leaf}: selected $selectedProfile") | Out-Null
+    }
+
+    if ($errors.Count -gt 0) {
+        throw "Forge launcher profile is not ready. $($errors -join ' ')"
+    }
+
+    "Forge profile ready: $($checked -join '; ')"
+}
+
+function Assert-ClientLaunchGate {
+    param(
+        [object]$Manifest,
+        [string]$MinecraftDir
+    )
+
+    $details = New-Object System.Collections.Generic.List[string]
+    $details.Add((Assert-ForgeLauncherProfileReady -MinecraftDir $MinecraftDir)) | Out-Null
+    $details.Add((Assert-InstalledManifestSection -Manifest $Manifest -Section 'client' -Destination (Join-Path $MinecraftDir 'mods') -NoExtraJars)) | Out-Null
+
+    $details -join '; '
+}
+
 function Install-ForgeClient {
     param([string]$MinecraftDir)
 
@@ -1565,11 +1725,28 @@ function Install-ClientPack {
         Add-InstallStatus -Name 'Add multiplayer server' -Passed $true -Details 'Skipped by -SkipServerEntry.'
     }
 
+    Write-Step "Verifying Forge profile and installed mod hashes"
+    $launchGateDetails = Assert-ClientLaunchGate -Manifest $Manifest -MinecraftDir $minecraftDir
+    Add-InstallStatus -Name 'Verify Forge profile and mod hashes' -Passed $true -Details $launchGateDetails
+
     Write-Step "Checking connection prerequisites"
     Add-ClientConnectionPrereqReport -MinecraftDir $minecraftDir
 
     Write-Host ""
     Write-Host "Client install complete. Launch the ChickenEveryDay Forge profile: $ForgeProfile" -ForegroundColor Green
+}
+
+function Test-ClientPackInstall {
+    param([object]$Manifest)
+
+    $minecraftDir = Join-Path $env:APPDATA '.minecraft'
+
+    Write-Step "Verifying installed client pack"
+    $launchGateDetails = Assert-ClientLaunchGate -Manifest $Manifest -MinecraftDir $minecraftDir
+    Add-InstallStatus -Name 'Verify installed client pack' -Passed $true -Details $launchGateDetails
+
+    Write-Host ""
+    Write-Host "Client pack verification passed. Launch the ChickenEveryDay Forge profile: $ForgeProfile" -ForegroundColor Green
 }
 
 function Install-ServerPack {
@@ -1610,7 +1787,14 @@ try {
         $AssetBaseUrl = $manifest.assetBaseUrl.TrimEnd('/')
     }
 
-    if ($Server) {
+    if ($VerifyOnly -and $Server) {
+        throw "-VerifyOnly is only for client installs."
+    }
+
+    if ($VerifyOnly) {
+        Test-ClientPackInstall -Manifest $manifest
+    }
+    elseif ($Server) {
         Install-ServerPack -Manifest $manifest
     }
     else {
