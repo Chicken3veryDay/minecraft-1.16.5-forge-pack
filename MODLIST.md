@@ -1,20 +1,20 @@
 ﻿# Minecraft 1.16.5 Forge Pack Mod List
 
-Generated: 2026-06-03T02:12:25.3825171Z
+Generated: 2026-06-03T03:01:28.4380237Z
 
 ## Release
 
 - Minecraft: 1.16.5
 - Forge: 36.2.42
-- Asset archive: `pack-assets-a6292b81d78e.zip`
-- Asset SHA-256: `a6292b81d78e03df1c5d21d5fbc13b9bce2614cd1460929f5d10714f604f6734`
-- Asset URL: <https://github.com/Chicken3veryDay/minecraft-1.16.5-forge-pack/releases/download/v2026.06.01/pack-assets-a6292b81d78e.zip>
-- Minimal installer: `minimal-pack-f4ea494062b5.zip`
-- Minimal installer SHA-256: `f4ea494062b5389c7810386b334e7169afc8d9118b1f8b957426f5af034c090c`
+- Asset archive: `pack-assets-bb864d08a96a.zip`
+- Asset SHA-256: `bb864d08a96aa4680f1155c07ca7567e91b7f7d4d66c4b3c00b9b79a35281088`
+- Asset URL: <https://github.com/Chicken3veryDay/minecraft-1.16.5-forge-pack/releases/download/v2026.06.01/pack-assets-bb864d08a96a.zip>
+- Minimal installer: `minimal-pack-5e39f6a3d480.zip`
+- Minimal installer SHA-256: `5e39f6a3d480e044036bfa8f9f3b73eec235c47b78066699b87898a3d958e78b`
 - Crafting fix: Polymorph removed from client and server because it changes recipe selection/workbench result synchronization and matches the ghost/empty crafting-result symptom. This is the current strongest fix candidate; final confirmation comes from live server crafting verification after deployment.
 - Previous-version restore: Previous-version mods were restored from the old GitHub release Mods.zip asset by side. Examples restored include JourneyMap, Jade, JEI, MouseTweaks, AmbientSounds, Oculus/Embeddium UI/performance client mods, plus Spark, AI Improvements, Connectivity, FastWorkbench, FastSuite, FastFurnace, Let Me Despawn, SmoothChunk, and TreeHarvester on the server side.
 - Validation: Dependency audit reads each jar META-INF/mods.toml and manifest Implementation-Version. Latest audit: no missing required dependencies, no incompatible required dependency ranges, no duplicate mod IDs, and no Polymorph jar present on either side.
-- Note: Chaos Awakens was removed from client and server because it has an unsatisfiable Geckolib conflict with Dungeons Gear in this pack: Chaos Awakens requires Geckolib [3.0.94,3.0.98), while Dungeons Gear requires Geckolib [3.0.103,). Craziniess Awakened remains installed.
+- Note: Chaos Awakens was removed from client and server because it has an unsatisfiable Geckolib conflict with Dungeons Gear in this pack: Chaos Awakens requires Geckolib [3.0.94,3.0.98), while Dungeons Gear requires Geckolib [3.0.103,). Craziniess Awakened remains installed. Legendary Tooltips, Iceberg, and Prism are client-only in this pack; Legendary Tooltips crashes a dedicated server by loading Minecraft client classes, so those jars were removed from Server and kept in Client.
 
 ## Client Mods (151)
 
@@ -172,7 +172,7 @@ Generated: 2026-06-03T02:12:25.3825171Z
 | `WitherSkeletonTweaks-1.16.5-5.4.1.jar` | 27401 | `6498891037906d09c323de6378042a8772c0748838665a257e12b4c5531c34b3` |
 | `YungsApi-1.16.4-Forge-13.jar` | 106058 | `2782ffcfd0501f24089b62cc2cd001864b0e3c122c5b8ecb3dc1531bf59884c6` |
 
-## Server Mods (138)
+## Server Mods (135)
 
 | File | Size | SHA-256 |
 |---|---:|---|
@@ -250,7 +250,6 @@ Generated: 2026-06-03T02:12:25.3825171Z
 | `guardvillagers-1.16.5.1.2.4.jar` | 188171 | `7b7764c511271db4cc5806768ca1d2c68522cae7ba415d6249d1756915a5c4ef` |
 | `Hats-1.16.5-10.3.4.jar` | 1544164 | `f85f3af9222a2752f5620e5c1c225f4a0af2e610b96180c821770f0723194617` |
 | `iceandfire-2.1.12-1.16.5-patch-1.jar` | 21463531 | `29e66bd0199169649f6de4e4b0ef00a67555eb348f10b8d01794c20d67f128c8` |
-| `Iceberg-1.16.5-1.0.45.jar` | 61577 | `bec3ebbd6eead24282b075d01b4f48d3e0c2d33ad5be45e0a3270c368ed49d43` |
 | `iChunUtil-1.16.5-10.7.0.jar` | 597557 | `45726157333a986d9123958ede53f09b7da3f20e88b496f715bbf5e7a4162b8b` |
 | `infernal-expansion-1.16.5-2.5.0.jar` | 14629220 | `df2e79d4e019e80d2ea593a17c309237ac80481ed202f4d4cb7ae1b3c79ac364` |
 | `InsaneLib-1.4.2-mc1.16.5.jar` | 45677 | `7bef0a474d0e520e0bb00488ed3575c96657e1e24941eb419b4a10a48a1b6b5c` |
@@ -258,7 +257,6 @@ Generated: 2026-06-03T02:12:25.3825171Z
 | `ironfurnaces-1.16.5-2.7.7.jar` | 493742 | `1203c7ddd5e6d36a7db144f8f425f3d7b23acd89452208fa7d0da5c8c298bba6` |
 | `itemcollectors-1.1.12-forge-mc1.16.jar` | 99093 | `d5622aaf09238d00c78ae8a44e4fa5bdfa96232d82048a18582c917deae0388b` |
 | `L_Enders Cataclysm-0.48 Changed Theme -1.16.5.jar` | 12700153 | `617c92ad1a3b970aa27201f8a26f3c356dc16571a45a64f8fb3ec89cfd01c6fc` |
-| `LegendaryTooltips-1.16.5-1.3.1.jar` | 47620 | `aa5cb4542850e23184729859398ea034cba292b1d62401b390fa751671bf34b5` |
 | `letmedespawn-forge-1.3.2b.jar` | 85166 | `c7f8d88fa26b70e70bf012f3438d7e23b56050a73d34d43abdbd6a50c372fed3` |
 | `LightAura-4.4.0.jar` | 18705 | `358ff6f2f64219561f5fd57e5025f66dd9f1ff02231f64195ad2c28fdbe7df42` |
 | `lootr-1.16.5-0.2.19.52.jar` | 377041 | `14e9069f2a053d20436f3dcf445a69d94ffc59e6d5aa1eed4c6e417469db9d10` |
@@ -279,7 +277,6 @@ Generated: 2026-06-03T02:12:25.3825171Z
 | `Pehkui-3.8.2+1.16.5-forge.jar` | 674598 | `9f9aa89ddbc4a80b0c508c55aa25a3120f769e8aefacc68e22c06293aeb557fe` |
 | `PickUpNotifier-v1.2-1.16.3.jar` | 42604 | `048cebf7c8ff0ec94ca30cafb4e22e2839e419e69082cbad2d5cd2de247aac13` |
 | `Placebo-1.16.5-4.7.1.jar` | 174158 | `eef4835343a46cc3c45776d905b52aced3f3b233d00a04ba646aaa9c6111b789` |
-| `Prism-1.16.5-1.0.1.jar` | 51909 | `8f5d4cefa734d972b8142e92bbbabc20967ef7a5f93f00071c8036d38ae3f402` |
 | `ProjectE-1.16.5-PE1.0.2.jar` | 2099991 | `626f0d0e8b9e044e4d6742c61925389babe4efdc42aaaceceb7b826418b62b11` |
 | `puffish_skills-0.5.0-1.16.5-forge.jar` | 300512 | `282437fa05245b91b4ec7184c6bb283b1450682d4b52d4046dd8703255cde4c7` |
 | `Quark-r2.4-322.jar` | 8796901 | `dcbccfaf08982ff7d8e11c6c4b54de75ad161317d5b69bcefe2e3c009040db25` |
