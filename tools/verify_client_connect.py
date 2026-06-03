@@ -410,6 +410,8 @@ def main() -> int:
     failure_patterns = [
         re.compile(r"Unexpected custom data from client", re.IGNORECASE),
         re.compile(r"mismatched mod channel list", re.IGNORECASE),
+        re.compile(r"mismatched mod list", re.IGNORECASE),
+        re.compile(r"rejected their client side version number", re.IGNORECASE),
         re.compile(r"fatally missing registry entries", re.IGNORECASE),
         re.compile(r"Failed to connect|Disconnected|Internal Exception", re.IGNORECASE),
         re.compile(r"NoSuchFieldError|Exception in thread|Crash report", re.IGNORECASE),
@@ -442,7 +444,7 @@ def main() -> int:
             if remote_client:
                 command_text = (
                     f"tail -c +{remote_offset + 1} {shell_quote(args.remote_log)} "
-                    f"| grep -E {shell_quote(account['username'] + '|Unexpected custom data|mismatched mod channel|fatally missing|lost connection|Disconnecting')} || true"
+                    f"| grep -E {shell_quote(account['username'] + '|Unexpected custom data|mismatched mod channel|mismatched mod list|rejected their client side version number|fatally missing|lost connection|Disconnecting')} || true"
                 )
                 remote_tail = remote_exec(remote_client, command_text)
                 if any(pattern.search(remote_tail) for pattern in success_patterns):

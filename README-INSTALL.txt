@@ -82,6 +82,12 @@ You can manually download the full modpack files from:
    %appdata%\.minecraft\shaderpacks
 6. Launch the Forge 1.16.5 profile.
 
+If a friend gets "Disconnected" or the server logs show `Disconnecting VANILLA connection attempt` / `mismatched mod list`, they are still on a non-matching client (vanilla or wrong jar versions). Have them:
+
+1. Close Minecraft Launcher.
+2. Run `powershell -NoProfile -ExecutionPolicy Bypass -File .\Install-Minecraft-Pack.ps1 -Force`.
+3. Start the `ChickenEveryDay Forge` profile.
+
 Manual server install
 ---------------------
 1. Install or prepare a Forge 1.16.5-36.2.42 server.
