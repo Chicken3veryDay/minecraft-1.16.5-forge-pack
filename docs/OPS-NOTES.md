@@ -18,6 +18,15 @@ These notes keep non-secret server details available for future Codex threads wo
 - Do not commit the VPS password, RCON password, or live `server.properties`.
 - Use `tools/ssh_ops.py` for password/key based SSH and SFTP operations when Paramiko is available.
 
+## Operator Permissions
+
+- `Chicken3veryDay` is already present in `/opt/minecraft/server/ops.json` with `level: 4` and `bypassesPlayerLimit: true`.
+- Server operator permission level is `op-permission-level=4`.
+- Latest verification (2026-06-03 21:00 UTC): latest server log shows `Chicken3veryDay` joined the game as a connected player and is tracked in ops.
+- To verify quickly from this repo:
+  - `python tools/ssh_ops.py 192.3.179.150 -u root exec "cat /opt/minecraft/server/ops.json"` (use the usual auth method).
+  - `python tools/ssh_ops.py 192.3.179.150 -u root exec "grep -n \"op-permission-level\\|online-mode\\|enable-rcon\\|rcon.port\" /opt/minecraft/server/server.properties"`.
+
 ## Brandon Windows Client
 
 - SSH target: `brandon@100.86.27.44:22`
@@ -32,4 +41,3 @@ The working fix for the Forge disconnect was replacing the client/server Invento
 - File: `inventorypets-1.16.5-2.2.jar`
 - SHA-256: `8bbb68cf77855e560406bf9d646a32b2452857709f41cf6c997d4a99210e99b1`
 - Failure signature before the fix: `Channels [inventorypets:channel] rejected their client side version number` followed by `mismatched mod channel list`.
-
