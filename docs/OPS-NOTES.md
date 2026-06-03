@@ -41,3 +41,8 @@ The working fix for the Forge disconnect was replacing the client/server Invento
 - File: `inventorypets-1.16.5-2.2.jar`
 - SHA-256: `8bbb68cf77855e560406bf9d646a32b2452857709f41cf6c997d4a99210e99b1`
 - Failure signature before the fix: `Channels [inventorypets:channel] rejected their client side version number` followed by `mismatched mod channel list`.
+- Current live check (2026-06-03 22:00 UTC): pack hashes are aligned (`check_pack_state.py` passes), but join attempts that still fail with:
+  - `rejected their client side version number` / `mismatched mod list`
+  - `Disconnecting VANILLA connection attempt`
+  indicate the joining client is not running the matching Forge clientmodset. Re-run the installer on that machine:
+  `powershell -NoProfile -ExecutionPolicy Bypass -File ..\Install-Minecraft-Pack.ps1 -Force`.
