@@ -1,21 +1,22 @@
 ﻿# Minecraft 1.16.5 Forge Pack Mod List
 
-Generated: 2026-06-03T18:26:08.2400633Z
+Generated: 2026-06-03T20:26:59.3085542Z
 
 ## Release
 
 - Minecraft: 1.16.5
 - Forge: 36.2.42
-- Asset archive: `pack-assets-60d911738ade.zip`
-- Asset SHA-256: `60d911738ade488be2a5348998ecd8fea5a23afce0dc7c90436fa8091345613e`
-- Asset URL: <https://github.com/Chicken3veryDay/minecraft-1.16.5-forge-pack/releases/download/v2026.06.03/pack-assets-60d911738ade.zip>
-- Minimal installer: `minimal-pack-5db74f0aec37.zip`
-- Minimal installer SHA-256: `5db74f0aec3797aa67472f5b713e7e5a384c85ee7b8a3d80e336fd974a36e6f2`
+- Asset archive: `pack-assets-fae9ae10f646.zip`
+- Asset SHA-256: `fae9ae10f64681d1c67ff69491cd41531429b501efb4e712db5ffb06b8ff75a4`
+- Asset URL: <https://github.com/Chicken3veryDay/minecraft-1.16.5-forge-pack/releases/download/v2026.06.03/pack-assets-fae9ae10f646.zip>
+- Minimal installer: `minimal-pack-e72e13c9812d.zip`
+- Minimal installer SHA-256: `e72e13c9812de4193c59878e751beb83d94c94c3b5781abd89f1cf01d5555c00`
 - Crafting fix: Polymorph remains removed from client and server because it changes recipe selection/workbench result synchronization and matched the earlier ghost/empty crafting-result symptom.
 - Previous-version restore: Combined server-join fix: MyServerIsCompatible was removed from Client because it only hides Forge incompatible-server warnings. The server-required utility/gameplay jars that were previously server-only are now also included in Client: AI Improvements, Chunk Sending, Chunky, Connectivity, FastFurnace, FastSuite, FastWorkbench, Let Me Despawn, SmoothChunk, Spark, and Tree Harvester. Mowzie's Mobs was updated from 1.5.25 to 1.5.27 on Client and Server to fix the GeckoLib 3.0.106 startup crash: NoSuchFieldError children.
 - Validation: Dependency audit reads each jar META-INF/mods.toml and manifest Implementation-Version. Latest audit: no missing required dependencies, no incompatible required dependency ranges, no duplicate mod IDs, no Polymorph jar present, no MyServerIsCompatible jar present in Client, and Mowzie's Mobs 1.5.27 present on both sides.
+- Note: Connection fix: Inventory Pets now matches the VPS server jar on Client and Server (inventorypets-1.16.5-2.2.jar, SHA-256 8bbb68cf77855e560406bf9d646a32b2452857709f41cf6c997d4a99210e99b1), resolving the Forge mismatched mod channel disconnect.
 
-## Client Mods (158)
+## Client Mods (159)
 
 | File | Size | SHA-256 |
 |---|---:|---|
@@ -109,6 +110,7 @@ Generated: 2026-06-03T18:26:08.2400633Z
 | `iChunUtil-1.16.5-10.7.0.jar` | 597557 | `45726157333a986d9123958ede53f09b7da3f20e88b496f715bbf5e7a4162b8b` |
 | `infernal-expansion-1.16.5-2.5.0.jar` | 14629220 | `df2e79d4e019e80d2ea593a17c309237ac80481ed202f4d4cb7ae1b3c79ac364` |
 | `InsaneLib-1.4.2-mc1.16.5.jar` | 45677 | `7bef0a474d0e520e0bb00488ed3575c96657e1e24941eb419b4a10a48a1b6b5c` |
+| `inventorypets-1.16.5-2.2.jar` | 7236106 | `8bbb68cf77855e560406bf9d646a32b2452857709f41cf6c997d4a99210e99b1` |
 | `inventorysorter-1.16.1-18.1.0.jar` | 49966 | `afb49ff93fdd9590a3d39a04df4fabef32afce0e331fe40339fe6b10e3091d6e` |
 | `ironfurnaces-1.16.5-2.7.7.jar` | 493742 | `1203c7ddd5e6d36a7db144f8f425f3d7b23acd89452208fa7d0da5c8c298bba6` |
 | `itemcollectors-1.1.12-forge-mc1.16.jar` | 99093 | `d5622aaf09238d00c78ae8a44e4fa5bdfa96232d82048a18582c917deae0388b` |
@@ -178,7 +180,7 @@ Generated: 2026-06-03T18:26:08.2400633Z
 | `WitherSkeletonTweaks-1.16.5-5.4.1.jar` | 27401 | `6498891037906d09c323de6378042a8772c0748838665a257e12b4c5531c34b3` |
 | `YungsApi-1.16.4-Forge-13.jar` | 106058 | `2782ffcfd0501f24089b62cc2cd001864b0e3c122c5b8ecb3dc1531bf59884c6` |
 
-## Server Mods (134)
+## Server Mods (135)
 
 | File | Size | SHA-256 |
 |---|---:|---|
@@ -259,6 +261,7 @@ Generated: 2026-06-03T18:26:08.2400633Z
 | `iChunUtil-1.16.5-10.7.0.jar` | 597557 | `45726157333a986d9123958ede53f09b7da3f20e88b496f715bbf5e7a4162b8b` |
 | `infernal-expansion-1.16.5-2.5.0.jar` | 14629220 | `df2e79d4e019e80d2ea593a17c309237ac80481ed202f4d4cb7ae1b3c79ac364` |
 | `InsaneLib-1.4.2-mc1.16.5.jar` | 45677 | `7bef0a474d0e520e0bb00488ed3575c96657e1e24941eb419b4a10a48a1b6b5c` |
+| `inventorypets-1.16.5-2.2.jar` | 7236106 | `8bbb68cf77855e560406bf9d646a32b2452857709f41cf6c997d4a99210e99b1` |
 | `inventorysorter-1.16.1-18.1.0.jar` | 49966 | `afb49ff93fdd9590a3d39a04df4fabef32afce0e331fe40339fe6b10e3091d6e` |
 | `ironfurnaces-1.16.5-2.7.7.jar` | 493742 | `1203c7ddd5e6d36a7db144f8f425f3d7b23acd89452208fa7d0da5c8c298bba6` |
 | `itemcollectors-1.1.12-forge-mc1.16.jar` | 99093 | `d5622aaf09238d00c78ae8a44e4fa5bdfa96232d82048a18582c917deae0388b` |

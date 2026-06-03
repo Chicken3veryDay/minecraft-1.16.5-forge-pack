@@ -1,0 +1,24 @@
+# Local secrets and machine-specific state
+server.properties
+.serena/
+_InstallCache/
+_DownloadCache/
+$
+__pycache__/
+*.pyc
+
+# Generated release archives are uploaded to GitHub Releases.
+pack-assets*.zip
+minimal-pack*.zip
+Auto-Downloader.zip
+Mods.zip
+
+# Pack payload folders are shipped inside pack-assets*.zip on GitHub Releases.
+Client/
+Config/
+Server/
+Shaderpacks/
+
+# Local verification screenshots captured during Codex/browser runs.
+/*.png
+/_*.png
