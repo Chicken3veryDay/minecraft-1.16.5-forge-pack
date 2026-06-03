@@ -1,28 +1,28 @@
 ﻿# Minecraft 1.16.5 Forge Pack Mod List
 
-Generated: 2026-06-03T03:24:11.6197308Z
+Generated: 2026-06-03T18:26:08.2400633Z
 
 ## Release
 
 - Minecraft: 1.16.5
 - Forge: 36.2.42
-- Asset archive: `pack-assets-8f3e23a358c3.zip`
-- Asset SHA-256: `8f3e23a358c3b3d3f07ab784f9aa9a4b3bcf5eb5ede043af2a589e91d97858a3`
-- Asset URL: <https://github.com/Chicken3veryDay/minecraft-1.16.5-forge-pack/releases/download/v2026.06.01/pack-assets-8f3e23a358c3.zip>
-- Minimal installer: `minimal-pack-70fd820824de.zip`
-- Minimal installer SHA-256: `70fd820824de9c3dd8e7215cba05bcac5d44a96cd4d5ccad2570b097eadfe71d`
-- Crafting fix: Polymorph is removed from client and server because it changes recipe selection/workbench result synchronization and matches the ghost/empty crafting-result symptom. Client Crafting is also removed from the client pack as a precaution because it modifies client-side crafting behavior and is unnecessary for server play. The latest login screenshot was caused by a stale local client install, not by the final server pack.
-- Previous-version restore: Previous-version mods were restored from the old GitHub release Mods.zip asset by side. Examples restored include JourneyMap, Jade, JEI, MouseTweaks, AmbientSounds, Oculus/Embeddium UI/performance client mods, plus Spark, AI Improvements, Connectivity, FastWorkbench, FastSuite, FastFurnace, Let Me Despawn, SmoothChunk, and TreeHarvester on the server side.
-- Validation: Dependency audit reads each jar META-INF/mods.toml and manifest Implementation-Version. Latest audit after removing Client Crafting: no missing required dependencies, no incompatible required dependency ranges, no duplicate mod IDs, no Polymorph jar present on either side, and no Client Crafting jar present in Client.
-- Note: Chaos Awakens was removed from client and server because it has an unsatisfiable Geckolib conflict with Dungeons Gear in this pack: Chaos Awakens requires Geckolib [3.0.94,3.0.98), while Dungeons Gear requires Geckolib [3.0.103,). Craziniess Awakened remains installed. Legendary Tooltips, Iceberg, and Prism are client-only in this pack; Legendary Tooltips crashes a dedicated server by loading Minecraft client classes, so those jars were removed from Server and kept in Client.
+- Asset archive: `pack-assets-60d911738ade.zip`
+- Asset SHA-256: `60d911738ade488be2a5348998ecd8fea5a23afce0dc7c90436fa8091345613e`
+- Asset URL: <https://github.com/Chicken3veryDay/minecraft-1.16.5-forge-pack/releases/download/v2026.06.03/pack-assets-60d911738ade.zip>
+- Minimal installer: `minimal-pack-5db74f0aec37.zip`
+- Minimal installer SHA-256: `5db74f0aec3797aa67472f5b713e7e5a384c85ee7b8a3d80e336fd974a36e6f2`
+- Crafting fix: Polymorph remains removed from client and server because it changes recipe selection/workbench result synchronization and matched the earlier ghost/empty crafting-result symptom.
+- Previous-version restore: Combined server-join fix: MyServerIsCompatible was removed from Client because it only hides Forge incompatible-server warnings. The server-required utility/gameplay jars that were previously server-only are now also included in Client: AI Improvements, Chunk Sending, Chunky, Connectivity, FastFurnace, FastSuite, FastWorkbench, Let Me Despawn, SmoothChunk, Spark, and Tree Harvester. Mowzie's Mobs was updated from 1.5.25 to 1.5.27 on Client and Server to fix the GeckoLib 3.0.106 startup crash: NoSuchFieldError children.
+- Validation: Dependency audit reads each jar META-INF/mods.toml and manifest Implementation-Version. Latest audit: no missing required dependencies, no incompatible required dependency ranges, no duplicate mod IDs, no Polymorph jar present, no MyServerIsCompatible jar present in Client, and Mowzie's Mobs 1.5.27 present on both sides.
 
-## Client Mods (150)
+## Client Mods (158)
 
 | File | Size | SHA-256 |
 |---|---:|---|
 | `abnormals_core-1.16.5-3.3.0.jar` | 975289 | `81837680e01bcf1deddb062eeea84b4f2ae67d9a69f79f48993d589d64eef2f0` |
 | `accelerated-decay-forge-69.0.0.jar` | 11840 | `fe6aba0bb2e4785be15210f433c8dc653ae3130c8b9d7a2b88ca47e6914bf4ba` |
 | `AdLods-1.16.5-4.1.10.0-build.0337.jar` | 107472 | `9ebd9629659f40a29a5fca84e675f029fe7576ee43768d0193a431bc38d4f2f5` |
+| `AI-Improvements-1.16.5-0.5.0.jar` | 28376 | `42994ada8ac233fde3a05d9be170c3d25d671f68339c798f1e7d1dab320fbdc4` |
 | `alexsmobs-1.12.1.jar` | 18135643 | `e5a29a46d1a83cfb705188168c38fbe65f0a1ac8c6126dc0f5f881ab3c1c6712` |
 | `alltheores-1.3.6-1.16.5-36.1.0.jar` | 484268 | `79b137888a5a999804d55e13a3fcad1c32798e773051227e878303ad78461447` |
 | `AmbientSounds_v3.1.11_mc1.16.5.jar` | 76505097 | `8943f381c944e716e6e6bade1df531373b05315e2a80c59ce49e4c1ab635487e` |
@@ -57,10 +57,13 @@ Generated: 2026-06-03T03:24:11.6197308Z
 | `carryon-1.16.5-1.15.6.24.jar` | 321769 | `0e294b86d831f5afa162c1d14cd1832541768341f92493ded9e7eb0377d06d2e` |
 | `catalogue-1.6.1-1.16.5.jar` | 97637 | `89abfb4277aa3dee8730df138ebf393aeae479f711ebbea8ede5312b48e3214b` |
 | `champions-forge-1.16.5-2.0.1.16.jar` | 222925 | `3998f26510dc492304111e4add8dd7cdc58d69dba6c47ef0ed76f86d25d18cbf` |
+| `chunksending-1.16.5-2.5.jar` | 13027 | `fbc4293c00b33aba3c292521058b9880eeeeb652893e549727927a3d08683b0c` |
+| `Chunky-1.2.123.jar` | 210906 | `ea25f65d7c8942442b8feff17a1c86a5e5f6706bf95ff17ee7711ea193721e37` |
 | `citadel-1.8.1-1.16.5.jar` | 482439 | `4c78a18f309aa9895ff6ef70fc3140c436c729fa84c832770ec30970daaab88a` |
 | `Clumps-6.0.0.28.jar` | 18397 | `f69abc1d44277b495004fd6d67d0f95f2574581bb26e55543f2dcd2153cd92d0` |
 | `collective-1.16.5-5.49.jar` | 189273 | `eea0121bbad3eefbbe0283d18758decba872e1d2f1fef8352a24f0a9f9d586d7` |
 | `configured-1.5.4-1.16.5.jar` | 131868 | `6c356a0422a650304b97a6ddadd0ccfa036031f2cd23d067e9ceba5c56b3e0d5` |
+| `connectivity-2.3-1.16.5.jar` | 52995 | `07f1a43915116527e488bad92609516f1c241a64d8c9c887e6a9f522f8accfe3` |
 | `Controlling-7.0.0.31.jar` | 53318 | `9ee5e46e08609bae46d344d736aaf562a498133e6919164649256cbdba219fbc` |
 | `coroutil-forge-1.16.5-1.3.6.jar` | 37129 | `cd9a94de2ccffa29fa18466665bd980abf021acb140632e20d7047165f047382` |
 | `corpse-1.16.5-1.0.6.jar` | 203988 | `c3b1e2ac93165045f7eb88871e06d5269ee4ca0bf41a46bb86f62075c9f778ef` |
@@ -87,7 +90,10 @@ Generated: 2026-06-03T03:24:11.6197308Z
 | `expandability-2.0.1-forge.jar` | 43358 | `0959cffb3a545730e6b2e1377bb89b59ff96e7f9142f54cc8035ab4fa2fc76e1` |
 | `farsight-1.7.jar` | 10183 | `6aabe8b3689eaf73be45728966459db110e0351427d802abfa6256e7a5557715` |
 | `fastboot-1.16.x-1.1.jar` | 24684 | `db208c8df5b6aed46fb4e30af19766ef568aef50bce664329392ffb1cb9cf3f4` |
+| `FastFurnace-1.16.5-4.5.0.jar` | 5907 | `fc384eeb166b8610e2f21b4f14e3341285744370b56fbb52d91bd4ee4bb8f106` |
 | `fast-ip-ping-v1.0.11-mc1.16.5-forge.jar` | 10556 | `3882b4680b20121e53f2fa1f51922387ad3cab3b12b39a8a265f8c496cfacde4` |
+| `FastSuite-1.16.4-1.1.1.jar` | 10829 | `3195239313100586bfa2f4dd02c5da0e20d7cfd5f7c00b8147efc2842f235be6` |
+| `FastWorkbench-1.16.5-4.6.2.jar` | 22470 | `36f00c55c8414467a40f784d15a4f6a24406a8847703cbbd73033df1f7c18526` |
 | `ferritecore-2.1.1-forge.jar` | 108557 | `9aec89734cdf8cb0ee31649e3f6aab9c04f2621eddecff8e31ccdfe18cf8e87a` |
 | `ForgeEndertech-1.16.5-7.3.0.0-build.0330.jar` | 542410 | `6435fbe173052e38808a60a5eacf1f8188a0fb3befba9059ff7bf32b86fdc311` |
 | `FpsReducer-forge-1.24-mc1.16.5.jar` | 95076 | `7455e9c992270b0302190ea288b7f3fe3791106345ef4095978d081d78f5756f` |
@@ -103,7 +109,6 @@ Generated: 2026-06-03T03:24:11.6197308Z
 | `iChunUtil-1.16.5-10.7.0.jar` | 597557 | `45726157333a986d9123958ede53f09b7da3f20e88b496f715bbf5e7a4162b8b` |
 | `infernal-expansion-1.16.5-2.5.0.jar` | 14629220 | `df2e79d4e019e80d2ea593a17c309237ac80481ed202f4d4cb7ae1b3c79ac364` |
 | `InsaneLib-1.4.2-mc1.16.5.jar` | 45677 | `7bef0a474d0e520e0bb00488ed3575c96657e1e24941eb419b4a10a48a1b6b5c` |
-| `inventorypets-1.16.5-2.2.jar` | 7236106 | `8bbb68cf77855e560406bf9d646a32b2452857709f41cf6c997d4a99210e99b1` |
 | `inventorysorter-1.16.1-18.1.0.jar` | 49966 | `afb49ff93fdd9590a3d39a04df4fabef32afce0e331fe40339fe6b10e3091d6e` |
 | `ironfurnaces-1.16.5-2.7.7.jar` | 493742 | `1203c7ddd5e6d36a7db144f8f425f3d7b23acd89452208fa7d0da5c8c298bba6` |
 | `itemcollectors-1.1.12-forge-mc1.16.jar` | 99093 | `d5622aaf09238d00c78ae8a44e4fa5bdfa96232d82048a18582c917deae0388b` |
@@ -113,6 +118,7 @@ Generated: 2026-06-03T03:24:11.6197308Z
 | `JustEnoughResources-1.16.5-0.12.2.216.jar` | 236423 | `022c883b9deeb5e11cd34e8e89181f70ff343285624310e16dc52ea042cd5933` |
 | `L_Enders Cataclysm-0.48 Changed Theme -1.16.5.jar` | 12700153 | `617c92ad1a3b970aa27201f8a26f3c356dc16571a45a64f8fb3ec89cfd01c6fc` |
 | `LegendaryTooltips-1.16.5-1.3.1.jar` | 47620 | `aa5cb4542850e23184729859398ea034cba292b1d62401b390fa751671bf34b5` |
+| `letmedespawn-forge-1.3.2b.jar` | 85166 | `c7f8d88fa26b70e70bf012f3438d7e23b56050a73d34d43abdbd6a50c372fed3` |
 | `LightAura-4.4.0.jar` | 18705 | `358ff6f2f64219561f5fd57e5025f66dd9f1ff02231f64195ad2c28fdbe7df42` |
 | `lootr-1.16.5-0.2.19.52.jar` | 377041 | `14e9069f2a053d20436f3dcf445a69d94ffc59e6d5aa1eed4c6e417469db9d10` |
 | `lucky-block-forge-1.16.5-6.0.jar` | 1921940 | `f842dec8095394aed3332bfd773f26c5f683bf339473279449d3fcf009395016` |
@@ -123,9 +129,8 @@ Generated: 2026-06-03T03:24:11.6197308Z
 | `modernfix-forge-5.18.0+mc1.16.5.jar` | 867079 | `17ff7a1096275e1c6706a8f65d3f903b5eccb4a979f4aeb5b4302b3966c5bde8` |
 | `Morph-1.16.5-10.2.1.jar` | 1277555 | `f5a150ae5952c8e12829c0c1375d62ef337d325d87dc13aa1885b90bef70b0da` |
 | `MouseTweaks-2.14-mc1.16.2.jar` | 58249 | `9d7e1aaee9f814c26d896e084e6e86930ab99e19fe547a1d350a6e25e4267092` |
-| `mowziesmobs-1.5.25.jar` | 13555699 | `78194f1f1aac666a7ef35b3509caa0e7da2bcb17c3d1d34301836377b86408d9` |
+| `mowziesmobs-1.5.27.jar` | 13557419 | `1c35253f5c3f85591ab5ccdffdef9777433ae2c3eb54fbae1bdf77146a6681d3` |
 | `MutantBeasts-1.16.4-1.1.3.jar` | 1289476 | `1d008fed88518398ed960d4e291ead910fd23e9e1d854436760716ab74c2af00` |
-| `MyServerIsCompatible-1.16.5-1.0.jar` | 3430 | `87eaf1318efaeb8cb4b86505820f4faca154287aefecc3e526cd59659955bfb8` |
 | `NaturesCompass-1.16.5-1.9.1-forge.jar` | 203573 | `f5f94447b6fde00eb450ba18236ce77a2f3f05998cf250841813afdf4b3303cd` |
 | `obscure_api-11.jar` | 859106 | `1c2d5c8976b7d4b4e298b3f30de78bc53eb3c1d288ec8c67e3af9a224ba88b07` |
 | `oculus-mc1.16.5-1.4.8.jar` | 3133901 | `2d1cf9d4c42f03acfbc941e4c27751d876fb2e7867e39c82e8b9f6fb7c74bb2f` |
@@ -150,6 +155,8 @@ Generated: 2026-06-03T03:24:11.6197308Z
 | `silent-gear-1.16.5-2.6.30.jar` | 2583204 | `cdcdfd9d45d2a18a5a35e04f9f812bbde9a4ad373445aac644d623f1c3dfc17c` |
 | `silent-lib-1.16.3-4.9.6.jar` | 247616 | `ccd8757d3a8b5447bb4192c1966099cd3671b2f7e49fb0d889f32359ad2d2d45` |
 | `smarterfarmers-1.16.5-1.2.1.jar` | 33716 | `405f87a08ea15ed6bc4d1c57dc8d4d6a5b6b7898a51a9b30a88fd31ebdd6e34a` |
+| `smoothchunk1.16.5-2.0.jar` | 14157 | `e7ab1d4fd31ee8e8be75a711df7b403d54a86514432302c8ad79a87851a2bc26` |
+| `spark-1.9.1-forge.jar` | 3157081 | `e0e10f3ba3c4169d4fe1408f4f9b081bb1f36e4cdf3777a26beab816057817e3` |
 | `SpartanWeaponry-1.16.5-2.2.2.jar` | 1660410 | `7c956831c3a280b04b6227b05178b82429623ffed539f919a4e90c65763a8334` |
 | `SpawnerFix-1.16.2-1.0.0.3.jar` | 63376 | `525aa0af91fe30af5a3b265837803ab08024b06948ea5168d7b0e434d4981c47` |
 | `stalwart-dungeons-1.16.5-1.1.7.jar` | 1542647 | `0502fdf83f471c520ab0894f3e50afd5f7067c09fd96dccd44f6646133287e44` |
@@ -163,15 +170,15 @@ Generated: 2026-06-03T03:24:11.6197308Z
 | `TheAbyss2 2.2.3-4 1.16.5.jar` | 59405125 | `ffc1c7bd80251a3a5de593a8624eda85e6f414f98855177181319e35a88662d1` |
 | `The-Hordes-1.16.5-1.1.5c.jar` | 198825 | `ff47da6155dd21faa72bb934c69cabaa6499894cf99f2d3cdad30ddb490ee250` |
 | `towers_of_the_wild-1.16.3-2.1.0.1.jar` | 157147 | `98436d28cf075f48fc8998fc2039df059dc5bdfae128a3cecda705fb65e8455a` |
+| `treeharvester_1.16.5-5.9.jar` | 22982 | `5d2262b4703bb2fbfaa829dd5bfa61aef080f3366b5316bef864e56c42d2081e` |
 | `twilightforest-1.16.5-4.0.870-universal.jar` | 31748538 | `85c53f5332d54ff2890083764db8a61cb5c507638959a17a4769d73ba19006ad` |
 | `upgrade_aquatic-1.16.5-3.1.2.jar` | 3682686 | `b14d6f3d8a1ba8a820a3d11e7cfe2d7b65ec84cb2b26f7859d76bab5d473d845` |
 | `watut-forge-1.16.5-1.0.14.jar` | 162606 | `9493bb15b77e2ec15bc46bcff111b8d517a35747b0ddc58807cd52ebe30baa78` |
 | `Waystones_1.16.5-7.6.4.jar` | 375934 | `191837d426b607a90b1263d10d45516b4482ea65cc5cdf4bf2fa2ac163912365` |
-| `weeping_angels-36.0.1.jar` | 7111515 | `6ac004657590eb101967d1317130f836e5c1e36414d8cb6f70911cad802f1889` |
 | `WitherSkeletonTweaks-1.16.5-5.4.1.jar` | 27401 | `6498891037906d09c323de6378042a8772c0748838665a257e12b4c5531c34b3` |
 | `YungsApi-1.16.4-Forge-13.jar` | 106058 | `2782ffcfd0501f24089b62cc2cd001864b0e3c122c5b8ecb3dc1531bf59884c6` |
 
-## Server Mods (135)
+## Server Mods (134)
 
 | File | Size | SHA-256 |
 |---|---:|---|
@@ -252,7 +259,7 @@ Generated: 2026-06-03T03:24:11.6197308Z
 | `iChunUtil-1.16.5-10.7.0.jar` | 597557 | `45726157333a986d9123958ede53f09b7da3f20e88b496f715bbf5e7a4162b8b` |
 | `infernal-expansion-1.16.5-2.5.0.jar` | 14629220 | `df2e79d4e019e80d2ea593a17c309237ac80481ed202f4d4cb7ae1b3c79ac364` |
 | `InsaneLib-1.4.2-mc1.16.5.jar` | 45677 | `7bef0a474d0e520e0bb00488ed3575c96657e1e24941eb419b4a10a48a1b6b5c` |
-| `inventorypets-1.16.5-2.2.jar` | 7236106 | `8bbb68cf77855e560406bf9d646a32b2452857709f41cf6c997d4a99210e99b1` |
+| `inventorysorter-1.16.1-18.1.0.jar` | 49966 | `afb49ff93fdd9590a3d39a04df4fabef32afce0e331fe40339fe6b10e3091d6e` |
 | `ironfurnaces-1.16.5-2.7.7.jar` | 493742 | `1203c7ddd5e6d36a7db144f8f425f3d7b23acd89452208fa7d0da5c8c298bba6` |
 | `itemcollectors-1.1.12-forge-mc1.16.jar` | 99093 | `d5622aaf09238d00c78ae8a44e4fa5bdfa96232d82048a18582c917deae0388b` |
 | `L_Enders Cataclysm-0.48 Changed Theme -1.16.5.jar` | 12700153 | `617c92ad1a3b970aa27201f8a26f3c356dc16571a45a64f8fb3ec89cfd01c6fc` |
@@ -266,7 +273,7 @@ Generated: 2026-06-03T03:24:11.6197308Z
 | `MobsPropertiesRandomness-3.3.0-mc1.16.5.jar` | 110479 | `2cf244eb10fa3c9d90ddda0553905aef4c923ad0527204d1173f00496002f78e` |
 | `modernfix-forge-5.18.0+mc1.16.5.jar` | 867079 | `17ff7a1096275e1c6706a8f65d3f903b5eccb4a979f4aeb5b4302b3966c5bde8` |
 | `Morph-1.16.5-10.2.1.jar` | 1277555 | `f5a150ae5952c8e12829c0c1375d62ef337d325d87dc13aa1885b90bef70b0da` |
-| `mowziesmobs-1.5.25.jar` | 13555699 | `78194f1f1aac666a7ef35b3509caa0e7da2bcb17c3d1d34301836377b86408d9` |
+| `mowziesmobs-1.5.27.jar` | 13557419 | `1c35253f5c3f85591ab5ccdffdef9777433ae2c3eb54fbae1bdf77146a6681d3` |
 | `MutantBeasts-1.16.4-1.1.3.jar` | 1289476 | `1d008fed88518398ed960d4e291ead910fd23e9e1d854436760716ab74c2af00` |
 | `NaturesCompass-1.16.5-1.9.1-forge.jar` | 203573 | `f5f94447b6fde00eb450ba18236ce77a2f3f05998cf250841813afdf4b3303cd` |
 | `obscure_api-11.jar` | 859106 | `1c2d5c8976b7d4b4e298b3f30de78bc53eb3c1d288ec8c67e3af9a224ba88b07` |
@@ -307,7 +314,6 @@ Generated: 2026-06-03T03:24:11.6197308Z
 | `upgrade_aquatic-1.16.5-3.1.2.jar` | 3682686 | `b14d6f3d8a1ba8a820a3d11e7cfe2d7b65ec84cb2b26f7859d76bab5d473d845` |
 | `watut-forge-1.16.5-1.0.14.jar` | 162606 | `9493bb15b77e2ec15bc46bcff111b8d517a35747b0ddc58807cd52ebe30baa78` |
 | `Waystones_1.16.5-7.6.4.jar` | 375934 | `191837d426b607a90b1263d10d45516b4482ea65cc5cdf4bf2fa2ac163912365` |
-| `weeping_angels-36.0.1.jar` | 7111515 | `6ac004657590eb101967d1317130f836e5c1e36414d8cb6f70911cad802f1889` |
 | `WitherSkeletonTweaks-1.16.5-5.4.1.jar` | 27401 | `6498891037906d09c323de6378042a8772c0748838665a257e12b4c5531c34b3` |
 | `YungsApi-1.16.4-Forge-13.jar` | 106058 | `2782ffcfd0501f24089b62cc2cd001864b0e3c122c5b8ecb3dc1531bf59884c6` |
 
