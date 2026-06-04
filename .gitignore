@@ -16,6 +16,7 @@ Mods.zip
 # Pack payload folders are shipped inside pack-assets*.zip on GitHub Releases.
 Client/
 Config/
+Root/
 Server/
 Shaderpacks/
 

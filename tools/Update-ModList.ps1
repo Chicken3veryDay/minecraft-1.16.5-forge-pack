@@ -2,9 +2,8 @@
 param(
     [string]$Root,
     [string]$OutputPath,
-    [string]$CraftingFix = 'Polymorph remains removed from client and server because it changes recipe selection/workbench result synchronization and matched the earlier ghost/empty crafting-result symptom.',
-    [string]$RestoreNote = 'Combined server-join fix: MyServerIsCompatible was removed from Client because it only hides Forge incompatible-server warnings. The server-required utility/gameplay jars that were previously server-only are now also included in Client: AI Improvements, Chunk Sending, Chunky, Connectivity, FastFurnace, FastSuite, FastWorkbench, Let Me Despawn, SmoothChunk, Spark, and Tree Harvester. Mowzie''s Mobs was updated from 1.5.25 to 1.5.27 on Client and Server to fix the GeckoLib 3.0.106 startup crash: NoSuchFieldError children.',
-    [string]$ValidationNote = 'Dependency audit reads each jar META-INF/mods.toml and manifest Implementation-Version. Latest audit: no missing required dependencies, no incompatible required dependency ranges, no duplicate mod IDs, no Polymorph jar present, no MyServerIsCompatible jar present in Client, and Mowzie''s Mobs 1.5.27 present on both sides.',
+    [string]$SourceNote = 'Client files are resolved from the exact Crazy Craft Updated 0.12.9 CurseForge manifest file IDs. Server files come from the official Crazy Craft Updated 0.12.9 server pack with enhanced_boss_bars removed because it loads client Minecraft classes on a dedicated server.',
+    [string]$ValidationNote = 'Release assets are generated from verified source ZIPs and checked by SHA-256 before upload. The client contains 331 exact manifest jars; the server payload is the official server pack tree minus the VPS-proven server-incompatible Enhanced Boss Bars jar.',
     [string[]]$AdditionalNotes = @()
 )
 
@@ -72,7 +71,7 @@ function Add-FileTable {
 }
 
 $lines = [System.Collections.Generic.List[string]]::new()
-$lines.Add('# Minecraft 1.16.5 Forge Pack Mod List') | Out-Null
+$lines.Add('# Crazy Craft Updated 0.12.9 File List') | Out-Null
 $lines.Add('') | Out-Null
 $lines.Add("Generated: $((Get-Date).ToUniversalTime().ToString('o'))") | Out-Null
 $lines.Add('') | Out-Null
@@ -87,8 +86,7 @@ $lines.Add("- Minimal installer: ``$minimalName``") | Out-Null
 if ($minimalHash) {
     $lines.Add("- Minimal installer SHA-256: ``$minimalHash``") | Out-Null
 }
-$lines.Add("- Crafting fix: $CraftingFix") | Out-Null
-$lines.Add("- Previous-version restore: $RestoreNote") | Out-Null
+$lines.Add("- Source: $SourceNote") | Out-Null
 $lines.Add("- Validation: $ValidationNote") | Out-Null
 foreach ($note in @($AdditionalNotes)) {
     if (-not [string]::IsNullOrWhiteSpace($note)) {
@@ -97,15 +95,20 @@ foreach ($note in @($AdditionalNotes)) {
 }
 
 Add-FileTable -Lines $lines -Title 'Client Mods' -Files @($manifest.client)
-Add-FileTable -Lines $lines -Title 'Server Mods' -Files @($manifest.server)
 
 if (@($manifest.config).Count -gt 0) {
     Add-FileTable -Lines $lines -Title 'Config Files' -Files @($manifest.config)
 }
 
+if (@($manifest.root).Count -gt 0) {
+    Add-FileTable -Lines $lines -Title 'Root Override Files' -Files @($manifest.root)
+}
+
 if (@($manifest.shaderpacks).Count -gt 0) {
     Add-FileTable -Lines $lines -Title 'Shaderpacks' -Files @($manifest.shaderpacks)
 }
+
+Add-FileTable -Lines $lines -Title 'Server Files' -Files @($manifest.server)
 
 Set-Content -LiteralPath $OutputPath -Value $lines -Encoding UTF8
 Write-Host "Updated $OutputPath"

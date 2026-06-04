@@ -10,7 +10,7 @@ param(
     [switch]$SkipServerEntry,
     [switch]$SkipConnectionCheck,
     [int]$ConnectionCheckTimeoutSeconds = 5,
-    [string]$ServerEntryName = 'ChickenEveryDay Modded',
+    [string]$ServerEntryName = 'Crazy Craft Updated',
     [string]$ServerEntryAddress = '192.3.179.150:25565',
     [string]$ClientMemoryMax = '8G',
     [string]$ClientMemoryMin = '4G'
@@ -21,8 +21,9 @@ $ErrorActionPreference = 'Stop'
 $PackRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ManifestPath = Join-Path $PackRoot '.pack-manifest.json'
 $MinecraftVersion = '1.16.5'
-$ForgeVersion = '36.2.42'
+$ForgeVersion = '36.2.35'
 $ForgeProfile = "$MinecraftVersion-forge-$ForgeVersion"
+$LauncherProfileName = 'Crazy Craft Updated Forge'
 $ForgeInstallerName = "forge-$MinecraftVersion-$ForgeVersion-installer.jar"
 $ForgeInstallerUrl = "https://maven.minecraftforge.net/net/minecraftforge/forge/$MinecraftVersion-$ForgeVersion/$ForgeInstallerName"
 $DownloadCacheRoot = Join-Path $PackRoot '_DownloadCache'
@@ -211,7 +212,7 @@ function Get-LauncherAccountStatus {
 
     [pscustomobject]@{
         Passed = $false
-        Details = 'No active Minecraft Launcher account was found. Open Minecraft Launcher, sign in, close it, then press Play on the ChickenEveryDay Forge profile.'
+        Details = "No active Minecraft Launcher account was found. Open Minecraft Launcher, sign in, close it, then press Play on the $LauncherProfileName profile."
     }
 }
 
@@ -350,7 +351,7 @@ function Invoke-DownloadFile {
 function Get-ManifestAssetItems {
     param([object]$Manifest)
 
-    foreach ($section in @('client', 'config', 'shaderpacks', 'server')) {
+    foreach ($section in @('client', 'config', 'root', 'shaderpacks', 'server')) {
         $items = $Manifest.$section
         if ($null -ne $items) {
             foreach ($item in @($items)) {
@@ -654,7 +655,7 @@ function Ensure-Directory {
 
 Ensure-Directory -Path $MinecraftDir
 
-foreach ($folderName in @('mods', 'config')) {
+foreach ($folderName in @('mods', 'config', 'defaultconfigs', 'kubejs')) {
     $source = Join-Path $BackupRoot $folderName
     $target = Join-Path $MinecraftDir $folderName
 
@@ -699,7 +700,7 @@ function Backup-And-ClearClientState {
     Ensure-Directory -Path $backupRoot
 
     $backedUp = New-Object System.Collections.Generic.List[string]
-    foreach ($folderName in @('mods', 'config')) {
+    foreach ($folderName in @('mods', 'config', 'defaultconfigs', 'kubejs')) {
         $source = Join-Path $MinecraftDir $folderName
         $target = Join-Path $backupRoot $folderName
 
@@ -728,16 +729,31 @@ function Backup-And-ClearServerState {
     $backupRoot = Join-Path $ServerPath ("_PackBackups\backup-{0}" -f (Get-Date -Format yyyyMMdd-HHmmss))
     Ensure-Directory -Path $backupRoot
 
-    $modsSource = Join-Path $ServerPath 'mods'
-    $modsBackup = Join-Path $backupRoot 'mods'
+    $backedUp = New-Object System.Collections.Generic.List[string]
+    foreach ($folderName in @('mods', 'config', 'defaultconfigs', 'kubejs', 'scripts', 'resourcepacks', 'datapacks', 'libraries')) {
+        $source = Join-Path $ServerPath $folderName
+        $target = Join-Path $backupRoot $folderName
 
-    if (Test-Path -LiteralPath $modsSource) {
-        Copy-Item -LiteralPath $modsSource -Destination $modsBackup -Recurse -Force
-        Remove-Item -LiteralPath $modsSource -Recurse -Force
-        Add-InstallStatus -Name 'Backup previous server mods' -Passed $true -Details "Backed up server mods to: $modsBackup"
+        if (Test-Path -LiteralPath $source) {
+            Copy-Item -LiteralPath $source -Destination $target -Recurse -Force
+            Remove-Item -LiteralPath $source -Recurse -Force
+            $backedUp.Add($folderName) | Out-Null
+        }
+    }
+
+    foreach ($pattern in @('forge*.jar', 'minecraft_server*.jar', 'start*.bat', 'run*.sh', 'user_jvm_args.txt', 'server-icon.png')) {
+        foreach ($source in @(Get-ChildItem -LiteralPath $ServerPath -Filter $pattern -File -ErrorAction SilentlyContinue)) {
+            Copy-Item -LiteralPath $source.FullName -Destination (Join-Path $backupRoot $source.Name) -Force
+            Remove-Item -LiteralPath $source.FullName -Force
+            $backedUp.Add($source.Name) | Out-Null
+        }
+    }
+
+    if ($backedUp.Count -eq 0) {
+        Add-InstallStatus -Name 'Backup previous server pack files' -Passed $true -Details 'No existing server pack files were found.'
     }
     else {
-        Add-InstallStatus -Name 'Backup previous server mods' -Passed $true -Details 'No existing server mods folder was found.'
+        Add-InstallStatus -Name 'Backup previous server pack files' -Passed $true -Details "Backed up and cleared: $($backedUp -join ', ')"
     }
 
     return $backupRoot
@@ -861,7 +877,7 @@ function Set-ForgeLauncherProfileMemory {
         $targetProfileId = $null
         foreach ($profileProperty in $profilesData.profiles.PSObject.Properties) {
             $profile = $profileProperty.Value
-            if (($profile.lastVersionId -eq $ForgeProfile) -or ($profile.name -eq 'ChickenEveryDay Forge') -or ($profile.name -eq $ForgeProfile)) {
+            if (($profile.lastVersionId -eq $ForgeProfile) -or ($profile.name -eq $LauncherProfileName) -or ($profile.name -eq $ForgeProfile)) {
                 $targetProfile = $profile
                 $targetProfileId = $profileProperty.Name
                 break
@@ -886,7 +902,7 @@ function Set-ForgeLauncherProfileMemory {
             $targetProfileId = 'forge'
             $now = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ss.fffZ')
             $targetProfile = [pscustomobject]@{
-                name = 'ChickenEveryDay Forge'
+                name = $LauncherProfileName
                 type = 'custom'
                 icon = 'Furnace'
                 created = $now
@@ -907,7 +923,7 @@ function Set-ForgeLauncherProfileMemory {
         $targetProfile | Add-Member -NotePropertyName 'lastVersionId' -NotePropertyValue $ForgeProfile -Force
         $targetProfile | Add-Member -NotePropertyName 'type' -NotePropertyValue 'custom' -Force
         $targetProfile | Add-Member -NotePropertyName 'icon' -NotePropertyValue 'Furnace' -Force
-        $targetProfile | Add-Member -NotePropertyName 'name' -NotePropertyValue 'ChickenEveryDay Forge' -Force
+        $targetProfile | Add-Member -NotePropertyName 'name' -NotePropertyValue $LauncherProfileName -Force
         $targetProfile | Add-Member -NotePropertyName 'lastUsed' -NotePropertyValue ((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ss.fffZ')) -Force
         $targetProfile | Add-Member -NotePropertyName 'javaArgs' -NotePropertyValue $javaArgs -Force
         $profilesData | Add-Member -NotePropertyName 'selectedProfile' -NotePropertyValue $targetProfileId -Force
@@ -918,7 +934,7 @@ function Set-ForgeLauncherProfileMemory {
     }
 
     [pscustomobject]@{
-        Details = "Set ChickenEveryDay Forge launcher profiles with memory -Xmx${ClientMemoryMax} -Xms${ClientMemoryMin}: $($details -join '; ')"
+        Details = "Set $LauncherProfileName launcher profiles with memory -Xmx${ClientMemoryMax} -Xms${ClientMemoryMin}: $($details -join '; ')"
         ProfileIds = @($profileIds | Select-Object -Unique)
     }
 }
@@ -1476,6 +1492,60 @@ function Copy-ManifestSection {
     }
 }
 
+function Get-ManifestSectionFolderName {
+    param([string]$Section)
+
+    switch ($Section) {
+        'client' { 'Client'; break }
+        'config' { 'Config'; break }
+        'root' { 'Root'; break }
+        'shaderpacks' { 'Shaderpacks'; break }
+        'server' { 'Server'; break }
+        default { $Section; break }
+    }
+}
+
+function Get-ManifestItemRelativePath {
+    param(
+        [object]$Item,
+        [string]$Section
+    )
+
+    if (-not [string]::IsNullOrWhiteSpace([string]$Item.relativePath)) {
+        return ([string]$Item.relativePath).Replace('/', [IO.Path]::DirectorySeparatorChar)
+    }
+
+    $path = ([string]$Item.path).Replace('\', '/')
+    $folderName = Get-ManifestSectionFolderName -Section $Section
+    $prefix = "$folderName/"
+    if ($path.StartsWith($prefix, [StringComparison]::OrdinalIgnoreCase)) {
+        return $path.Substring($prefix.Length).Replace('/', [IO.Path]::DirectorySeparatorChar)
+    }
+
+    return [string]$Item.name
+}
+
+function Copy-ManifestSectionTree {
+    param(
+        [object]$Manifest,
+        [string]$Section,
+        [string]$Destination
+    )
+
+    Ensure-Directory -Path $Destination
+
+    foreach ($item in $Manifest.$Section) {
+        $source = Resolve-AssetSource -Item $item
+        $relative = Get-ManifestItemRelativePath -Item $item -Section $Section
+        $target = Join-Path $Destination $relative
+        $targetParent = Split-Path -Parent $target
+        if (-not [string]::IsNullOrWhiteSpace($targetParent)) {
+            Ensure-Directory -Path $targetParent
+        }
+        Copy-Item -LiteralPath $source -Destination $target -Force
+    }
+}
+
 function Format-LimitedList {
     param(
         [object[]]$Items,
@@ -1591,19 +1661,19 @@ function Assert-ForgeLauncherProfileReady {
         $matchingProfileIds = New-Object System.Collections.Generic.List[string]
         foreach ($profileProperty in $profilesData.profiles.PSObject.Properties) {
             $profile = $profileProperty.Value
-            if (($profile.name -eq 'ChickenEveryDay Forge') -and ($profile.lastVersionId -eq $ForgeProfile)) {
+            if (($profile.name -eq $LauncherProfileName) -and ($profile.lastVersionId -eq $ForgeProfile)) {
                 $matchingProfileIds.Add($profileProperty.Name) | Out-Null
             }
         }
 
         if ($matchingProfileIds.Count -eq 0) {
-            $errors.Add("${leaf}: missing ChickenEveryDay Forge profile for $ForgeProfile") | Out-Null
+            $errors.Add("${leaf}: missing $LauncherProfileName profile for $ForgeProfile") | Out-Null
             continue
         }
 
         $selectedProfile = [string]$profilesData.selectedProfile
         if ([string]::IsNullOrWhiteSpace($selectedProfile)) {
-            $errors.Add("${leaf}: selectedProfile is not set to ChickenEveryDay Forge") | Out-Null
+            $errors.Add("${leaf}: selectedProfile is not set to $LauncherProfileName") | Out-Null
             continue
         }
 
@@ -1689,7 +1759,7 @@ function Install-ClientPack {
     Add-InstallStatus -Name 'Close running Minecraft' -Passed $true -Details $closedProcessesDetails
 
     Write-Step "Verifying bundled client files"
-    $sections = @('client', 'config')
+    $sections = @('client', 'config', 'root')
     if (-not $NoShader) {
         $sections += 'shaderpacks'
     }
@@ -1720,8 +1790,12 @@ function Install-ClientPack {
     Add-InstallStatus -Name 'Copy client mods' -Passed $true -Details "$(@($Manifest.client).Count) files copied."
 
     Write-Step "Copying config"
-    Copy-ManifestSection -Manifest $Manifest -Section 'config' -Destination (Join-Path $minecraftDir 'config')
+    Copy-ManifestSectionTree -Manifest $Manifest -Section 'config' -Destination (Join-Path $minecraftDir 'config')
     Add-InstallStatus -Name 'Copy config' -Passed $true -Details "$(@($Manifest.config).Count) files copied."
+
+    Write-Step "Copying root overrides"
+    Copy-ManifestSectionTree -Manifest $Manifest -Section 'root' -Destination $minecraftDir
+    Add-InstallStatus -Name 'Copy root overrides' -Passed $true -Details "$(@($Manifest.root).Count) files copied."
 
     if (-not $NoShader) {
         Write-Step "Copying shaderpacks"
@@ -1749,7 +1823,7 @@ function Install-ClientPack {
     Add-ClientConnectionPrereqReport -MinecraftDir $minecraftDir
 
     Write-Host ""
-    Write-Host "Client install complete. Launch the ChickenEveryDay Forge profile: $ForgeProfile" -ForegroundColor Green
+    Write-Host "Client install complete. Launch the $LauncherProfileName profile: $ForgeProfile" -ForegroundColor Green
 }
 
 function Test-ClientPackInstall {
@@ -1762,7 +1836,7 @@ function Test-ClientPackInstall {
     Add-InstallStatus -Name 'Verify installed client pack' -Passed $true -Details $launchGateDetails
 
     Write-Host ""
-    Write-Host "Client pack verification passed. Launch the ChickenEveryDay Forge profile: $ForgeProfile" -ForegroundColor Green
+    Write-Host "Client pack verification passed. Launch the $LauncherProfileName profile: $ForgeProfile" -ForegroundColor Green
 }
 
 function Install-ServerPack {
@@ -1775,7 +1849,7 @@ function Install-ServerPack {
     $resolvedServerPath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($ServerPath)
     Ensure-Directory -Path $resolvedServerPath
 
-    Write-Step "Backing up previous server mods"
+    Write-Step "Backing up previous server pack files"
     $serverBackupRoot = Backup-And-ClearServerState -ServerPath $resolvedServerPath
     Write-Host "Server backup folder: $serverBackupRoot"
 
@@ -1783,16 +1857,16 @@ function Install-ServerPack {
     Assert-BundledFiles -Manifest $Manifest -Sections @('server')
     Add-InstallStatus -Name 'Verify server assets' -Passed $true -Details 'Verified section: server'
 
-    Write-Step "Copying server mods"
-    Copy-ManifestSection -Manifest $Manifest -Section 'server' -Destination (Join-Path $resolvedServerPath 'mods')
-    Add-InstallStatus -Name 'Copy server mods' -Passed $true -Details "$(@($Manifest.server).Count) files copied."
+    Write-Step "Copying server files"
+    Copy-ManifestSectionTree -Manifest $Manifest -Section 'server' -Destination $resolvedServerPath
+    Add-InstallStatus -Name 'Copy server files' -Passed $true -Details "$(@($Manifest.server).Count) files copied."
 
     Write-Host ""
-    Write-Host "Server mods copied to: $(Join-Path $resolvedServerPath 'mods')" -ForegroundColor Green
+    Write-Host "Server files copied to: $resolvedServerPath" -ForegroundColor Green
 }
 
 try {
-    Write-Host "Minecraft $MinecraftVersion Forge Pack Installer"
+    Write-Host "Crazy Craft Updated $MinecraftVersion Forge Installer"
     Write-Host "Pack folder: $PackRoot"
 
     $manifest = Read-Manifest

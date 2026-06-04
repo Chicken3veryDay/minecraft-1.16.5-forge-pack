@@ -18,7 +18,7 @@ from minecraft_launcher_lib import microsoft_account
 import paramiko
 
 
-MINECRAFT_VERSION = "1.16.5-forge-36.2.42"
+MINECRAFT_VERSION = "1.16.5-forge-36.2.35"
 MINECRAFT_LAUNCHER_CLIENT_ID = "00000000402b5328"
 PACK_ROOT = pathlib.Path(__file__).resolve().parents[1]
 MANIFEST_PATH = PACK_ROOT / ".pack-manifest.json"

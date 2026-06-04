@@ -3,13 +3,14 @@ param(
     [string]$Owner = 'Chicken3veryDay',
     [string]$Repo = 'minecraft-1.16.5-forge-pack',
     [string]$Tag = "v$(Get-Date -Format yyyy.MM.dd)",
-    [string]$PackName = 'Minecraft 1.16.5 Forge Pack',
+    [string]$PackName = 'Crazy Craft Updated 0.12.9',
     [string]$MinecraftVersion = '1.16.5',
-    [string]$ForgeVersion = '36.2.42',
+    [string]$ForgeVersion = '36.2.35',
     [switch]$SkipMinimalZip,
     [switch]$Upload,
     [switch]$VerifyHostedRelease,
-    [switch]$StaticAssetNames
+    [switch]$StaticAssetNames,
+    [switch]$ApplyPackFixes
 )
 
 $ErrorActionPreference = 'Stop'
@@ -210,7 +211,7 @@ function Remove-StaleGitHubReleaseAssetsByPattern {
 }
 
 $combinedFixScript = Join-Path $PackRoot 'tools\Apply-PackFixes.ps1'
-if (Test-Path -LiteralPath $combinedFixScript) {
+if ($ApplyPackFixes -and (Test-Path -LiteralPath $combinedFixScript)) {
     Write-Step "Applying pack fixes"
     & $combinedFixScript
 }
@@ -219,6 +220,7 @@ Write-Step "Building hosted asset archive"
 Invoke-CompressArchiveWithRetry -LiteralPath @(
     (Join-Path $PackRoot 'Client'),
     (Join-Path $PackRoot 'Config'),
+    (Join-Path $PackRoot 'Root'),
     (Join-Path $PackRoot 'Server'),
     (Join-Path $PackRoot 'Shaderpacks')
 ) -DestinationPath $AssetArchivePath
@@ -249,6 +251,7 @@ $manifest = [ordered]@{
     }
     client = @(Get-PackFiles -Section 'client' -FolderName 'Client')
     config = @(Get-PackFiles -Section 'config' -FolderName 'Config')
+    root = @(Get-PackFiles -Section 'root' -FolderName 'Root')
     shaderpacks = @(Get-PackFiles -Section 'shaderpacks' -FolderName 'Shaderpacks')
     server = @(Get-PackFiles -Section 'server' -FolderName 'Server')
 }
@@ -266,6 +269,7 @@ if (-not $SkipMinimalZip) {
     Invoke-CompressArchiveWithRetry -LiteralPath @(
         (Join-Path $PackRoot 'Install-Minecraft-Pack.bat'),
         (Join-Path $PackRoot 'Install-Minecraft-Pack.ps1'),
+        (Join-Path $PackRoot 'Install-CrazyCraft-Server.sh'),
         $ManifestPath,
         (Join-Path $PackRoot 'README-INSTALL.txt')
     ) -DestinationPath $MinimalZipPath

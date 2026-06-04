@@ -5,27 +5,56 @@ These notes keep non-secret server details available for future Codex threads wo
 ## Minecraft Server
 
 - Public Minecraft endpoint: `192.3.179.150:25565`
-- Version: Minecraft `1.16.5`, Forge `36.2.42`
-- Expected MOTD: `RackNerd Forge 1.16.5`
-- Authentication mode: `online-mode=false` so offline/unofficial accounts can join.
+- Pack: Crazy Craft Updated `0.12.9`
+- Minecraft: `1.16.5`
+- Forge: `36.2.35`
 - Server install path on VPS: `/opt/minecraft/server`
-- Server log path on VPS: `/opt/minecraft/server/logs/latest.log`
-- Server properties path on VPS: `/opt/minecraft/server/server.properties`
+- systemd service: `minecraft`
+- Server log path: `/opt/minecraft/server/logs/latest.log`
+- Server properties path: `/opt/minecraft/server/server.properties`
+- Current MOTD after migration: `Crazy Craft Updated 0.12.9`
+- Fresh world seed after migration: `4996086032965686551`
+- Pre-migration safety backup: `/opt/minecraft/server-backups/pre-crazycraft-20260604-013948/server.tar.gz`
+
+## Source Artifacts
+
+- CurseForge project: <https://www.curseforge.com/minecraft/modpacks/crazy-craft-updated>
+- Client pack file ID `8069957`, SHA-256 `6940b0862291366a0f5d102f5dc1dc9e64dcedbb72024ff26bed0b867ca9fe1b`
+- Server pack file ID `8070007`, SHA-256 `0c7b14464dd659f2d11166822b146f2ab755d3992b4fb0ea029bd1a097991ad3`
+- Official server start command from `start.bat`: `java -Xmx8192M -Xms8192M -jar forge.jar nogui`
+- VPS server launch command: `java -Xms1G -Xmx4G -XX:+UseG1GC -jar forge.jar nogui`
 
 ## VPS Access
 
 - SSH target: `root@192.3.179.150:22`
 - Do not commit the VPS password, RCON password, or live `server.properties`.
-- Use `tools/ssh_ops.py` for password/key based SSH and SFTP operations when Paramiko is available.
+- Prefer `tools/ssh_ops.py` with a secure prompt wrapper. Do not pass secrets inline or through command-line environment setup.
 
-## Operator Permissions
+## Migration Runbook
 
-- `Chicken3veryDay` is already present in `/opt/minecraft/server/ops.json` with `level: 4` and `bypassesPlayerLimit: true`.
-- Server operator permission level is `op-permission-level=4`.
-- Latest verification (2026-06-03 21:00 UTC): latest server log shows `Chicken3veryDay` joined the game as a connected player and is tracked in ops.
-- To verify quickly from this repo:
-  - `python tools/ssh_ops.py 192.3.179.150 -u root exec "cat /opt/minecraft/server/ops.json"` (use the usual auth method).
-  - `python tools/ssh_ops.py 192.3.179.150 -u root exec "grep -n \"op-permission-level\\|online-mode\\|enable-rcon\\|rcon.port\" /opt/minecraft/server/server.properties"`.
+1. Verify SSH access.
+2. Run read-only preflight:
+   `python tools/ssh_ops.py 192.3.179.150 -u root --password-env CODEX_SSH_PASSWORD exec --command-file tools/remote_preflight_crazycraft.sh`
+3. Stop `minecraft` and create a timestamped backup before destructive changes.
+4. Wipe old world folders and previous pack folders.
+5. Install the official Crazy Craft Updated server pack.
+6. Preserve important `server.properties` choices such as `server-ip`, `server-port`, `online-mode`, RCON, whitelist, difficulty, and gamemode.
+7. Clear `level-seed` before first startup so the map regenerates.
+8. Start `minecraft`, wait for a fresh `Done (...)! For help` log line, record the generated seed, and ping `192.3.179.150:25565`.
+
+The local migration helper for the current VPS is:
+
+`tools/remote_install_crazycraft.sh`
+
+The release-side Linux installer is:
+
+`Install-CrazyCraft-Server.sh`
+
+It installs from the GitHub Release `pack-assets` archive rather than from ForgeCDN.
+
+## Optimization Notes
+
+Crazy Craft Updated already includes several optimization/stability mods for 1.16.5 Forge, including ModernFix, FerriteCore, AI Improvements, Clumps, Connectivity, MemoryLeakFix, PacketFixer, Performant, FastWorkbench, FastFurnace, and FastAsyncWorldSave. Do not add unrelated content mods. Add more optimization mods only after verifying exact 1.16.5 Forge compatibility and server startup.
 
 ## Brandon Windows Client
 
@@ -33,18 +62,3 @@ These notes keep non-secret server details available for future Codex threads wo
 - SSH key on Michael's machine: `C:\Users\micha\.ssh\brandon_admin_ed25519`
 - Remote repair/update helper: `tools\Repair-RemoteWindowsMinecraftClient.ps1`
 - Only update Brandon's client after the GitHub release and repo push are complete.
-
-## Last Known Connection Fix
-
-The working fix for the Forge disconnect was replacing the client/server Inventory Pets jar with the VPS server version:
-
-- File: `inventorypets-1.16.5-2.2.jar`
-- SHA-256: `8bbb68cf77855e560406bf9d646a32b2452857709f41cf6c997d4a99210e99b1`
-- Failure signature before the fix: `Channels [inventorypets:channel] rejected their client side version number` followed by `mismatched mod channel list`.
-- Current live check (2026-06-03 22:00 UTC): pack hashes are aligned (`check_pack_state.py` passes), but join attempts that still fail with:
-  - `rejected their client side version number` / `mismatched mod list`
-  - `Disconnecting VANILLA connection attempt`
-  indicate the joining client is not running the matching Forge clientmodset. Re-run the installer on that machine:
-  `powershell -NoProfile -ExecutionPolicy Bypass -File ..\Install-Minecraft-Pack.ps1 -Force`.
-- Client installs now include a hard local launch gate: the installer fails unless `ChickenEveryDay Forge` is selected for `1.16.5-forge-36.2.42` and the installed `mods` jars exactly match `.pack-manifest.json`. To validate a friend's already-installed client without changing files, run:
-  `powershell -NoProfile -ExecutionPolicy Bypass -File ..\Install-Minecraft-Pack.ps1 -VerifyOnly`.
