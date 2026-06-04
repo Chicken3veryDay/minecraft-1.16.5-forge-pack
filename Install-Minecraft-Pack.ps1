@@ -24,6 +24,7 @@ $MinecraftVersion = '1.16.5'
 $ForgeVersion = '36.2.35'
 $ForgeProfile = "$MinecraftVersion-forge-$ForgeVersion"
 $LauncherProfileName = 'Crazy Craft Updated Forge'
+$LauncherProfileId = 'crazy-craft-updated-forge'
 $ForgeInstallerName = "forge-$MinecraftVersion-$ForgeVersion-installer.jar"
 $ForgeInstallerUrl = "https://maven.minecraftforge.net/net/minecraftforge/forge/$MinecraftVersion-$ForgeVersion/$ForgeInstallerName"
 $DownloadCacheRoot = Join-Path $PackRoot '_DownloadCache'
@@ -873,25 +874,19 @@ function Set-ForgeLauncherProfileMemory {
             $profilesData | Add-Member -NotePropertyName 'profiles' -NotePropertyValue ([pscustomobject]@{}) -Force
         }
 
+        $targetProfileId = $LauncherProfileId
         $targetProfile = $null
-        $targetProfileId = $null
-        foreach ($profileProperty in $profilesData.profiles.PSObject.Properties) {
-            $profile = $profileProperty.Value
-            if (($profile.lastVersionId -eq $ForgeProfile) -or ($profile.name -eq $LauncherProfileName) -or ($profile.name -eq $ForgeProfile)) {
-                $targetProfile = $profile
-                $targetProfileId = $profileProperty.Name
-                break
-            }
+        $existingTarget = $profilesData.profiles.PSObject.Properties[$targetProfileId]
+        if ($null -ne $existingTarget) {
+            $targetProfile = $existingTarget.Value
         }
-
-        if ($null -eq $targetProfile) {
+        else {
             foreach ($profileProperty in $profilesData.profiles.PSObject.Properties) {
                 $profile = $profileProperty.Value
-                if (($profile.lastVersionId -eq 'latest-release') -or ($profile.type -eq 'latest-release')) {
+                if (($profile.lastVersionId -eq $ForgeProfile) -or ($profile.name -eq $LauncherProfileName) -or ($profile.name -eq $ForgeProfile)) {
                     $targetProfile = $profile
-                    $targetProfileId = $profileProperty.Name
                     if ($profileMode -eq 'updated') {
-                        $profileMode = 'repurposed latest-release'
+                        $profileMode = "copied existing profile $($profileProperty.Name)"
                     }
                     break
                 }
@@ -899,7 +894,6 @@ function Set-ForgeLauncherProfileMemory {
         }
 
         if ($null -eq $targetProfile) {
-            $targetProfileId = 'forge'
             $now = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ss.fffZ')
             $targetProfile = [pscustomobject]@{
                 name = $LauncherProfileName
@@ -909,7 +903,6 @@ function Set-ForgeLauncherProfileMemory {
                 lastUsed = $now
                 lastVersionId = $ForgeProfile
             }
-            $profilesData.profiles | Add-Member -NotePropertyName $targetProfileId -NotePropertyValue $targetProfile -Force
             $profileMode = 'created fallback profile'
         }
 
@@ -926,6 +919,8 @@ function Set-ForgeLauncherProfileMemory {
         $targetProfile | Add-Member -NotePropertyName 'name' -NotePropertyValue $LauncherProfileName -Force
         $targetProfile | Add-Member -NotePropertyName 'lastUsed' -NotePropertyValue ((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ss.fffZ')) -Force
         $targetProfile | Add-Member -NotePropertyName 'javaArgs' -NotePropertyValue $javaArgs -Force
+        $targetProfile | Add-Member -NotePropertyName 'gameDir' -NotePropertyValue $MinecraftDir -Force
+        $profilesData.profiles | Add-Member -NotePropertyName $targetProfileId -NotePropertyValue $targetProfile -Force
         $profilesData | Add-Member -NotePropertyName 'selectedProfile' -NotePropertyValue $targetProfileId -Force
         Set-TextUtf8NoBom -Path $profilesPath -Value ($profilesData | ConvertTo-Json -Depth 100)
 
@@ -1623,6 +1618,56 @@ function Assert-InstalledManifestSection {
     "$Section verified: $($items.Count) file(s)"
 }
 
+function Assert-InstalledManifestSectionTree {
+    param(
+        [object]$Manifest,
+        [string]$Section,
+        [string]$Destination
+    )
+
+    $items = @($Manifest.$Section)
+    if ($items.Count -eq 0) {
+        return "$Section verified: 0 file(s)"
+    }
+
+    if (-not (Test-Path -LiteralPath $Destination)) {
+        throw "Installed $Section folder is missing: $Destination"
+    }
+
+    $missing = New-Object System.Collections.Generic.List[string]
+    $mismatched = New-Object System.Collections.Generic.List[string]
+
+    foreach ($item in $items) {
+        $relative = Get-ManifestItemRelativePath -Item $item -Section $Section
+        $target = Join-Path $Destination $relative
+
+        if (-not (Test-Path -LiteralPath $target)) {
+            $missing.Add($relative) | Out-Null
+            continue
+        }
+
+        $actual = Get-FileHashSha256 -Path $target
+        $expected = ([string]$item.sha256).ToLowerInvariant()
+        if ($actual -ne $expected) {
+            $mismatched.Add("$relative expected $expected got $actual") | Out-Null
+        }
+    }
+
+    if (($missing.Count -gt 0) -or ($mismatched.Count -gt 0)) {
+        $details = New-Object System.Collections.Generic.List[string]
+        if ($missing.Count -gt 0) {
+            $details.Add("missing ($($missing.Count)): $(Format-LimitedList -Items @($missing.ToArray()))") | Out-Null
+        }
+        if ($mismatched.Count -gt 0) {
+            $details.Add("hash mismatch ($($mismatched.Count)): $(Format-LimitedList -Items @($mismatched.ToArray()))") | Out-Null
+        }
+
+        throw "Installed $Section files do not match the pack manifest in ${Destination}. $($details -join ' ')"
+    }
+
+    "$Section verified: $($items.Count) file(s)"
+}
+
 function Assert-ForgeLauncherProfileReady {
     param([string]$MinecraftDir)
 
@@ -1658,16 +1703,28 @@ function Assert-ForgeLauncherProfileReady {
             continue
         }
 
-        $matchingProfileIds = New-Object System.Collections.Generic.List[string]
-        foreach ($profileProperty in $profilesData.profiles.PSObject.Properties) {
-            $profile = $profileProperty.Value
-            if (($profile.name -eq $LauncherProfileName) -and ($profile.lastVersionId -eq $ForgeProfile)) {
-                $matchingProfileIds.Add($profileProperty.Name) | Out-Null
-            }
+        $targetProfileProperty = $profilesData.profiles.PSObject.Properties[$LauncherProfileId]
+        if ($null -eq $targetProfileProperty) {
+            $errors.Add("${leaf}: missing $LauncherProfileName profile id '$LauncherProfileId' for $ForgeProfile") | Out-Null
+            continue
         }
 
-        if ($matchingProfileIds.Count -eq 0) {
-            $errors.Add("${leaf}: missing $LauncherProfileName profile for $ForgeProfile") | Out-Null
+        $targetProfile = $targetProfileProperty.Value
+        if (([string]$targetProfile.name -ne $LauncherProfileName) -or ([string]$targetProfile.lastVersionId -ne $ForgeProfile)) {
+            $errors.Add("${leaf}: profile '$LauncherProfileId' points to '$($targetProfile.name)' / '$($targetProfile.lastVersionId)', expected $LauncherProfileName / $ForgeProfile") | Out-Null
+            continue
+        }
+
+        $profileGameDir = [string]$targetProfile.gameDir
+        if ([string]::IsNullOrWhiteSpace($profileGameDir)) {
+            $errors.Add("${leaf}: profile '$LauncherProfileId' has no gameDir; rerun the installer so it launches the installed .minecraft folder") | Out-Null
+            continue
+        }
+
+        $expectedGameDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($MinecraftDir)
+        $actualGameDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($profileGameDir)
+        if (-not [string]::Equals($actualGameDir.TrimEnd('\'), $expectedGameDir.TrimEnd('\'), [StringComparison]::OrdinalIgnoreCase)) {
+            $errors.Add("${leaf}: profile '$LauncherProfileId' gameDir is '$actualGameDir', expected '$expectedGameDir'") | Out-Null
             continue
         }
 
@@ -1677,8 +1734,8 @@ function Assert-ForgeLauncherProfileReady {
             continue
         }
 
-        if (-not $matchingProfileIds.Contains($selectedProfile)) {
-            $errors.Add("${leaf}: selectedProfile is '$selectedProfile', expected one of $($matchingProfileIds -join ', ')") | Out-Null
+        if ($selectedProfile -ne $LauncherProfileId) {
+            $errors.Add("${leaf}: selectedProfile is '$selectedProfile', expected '$LauncherProfileId'") | Out-Null
             continue
         }
 
@@ -1701,6 +1758,8 @@ function Assert-ClientLaunchGate {
     $details = New-Object System.Collections.Generic.List[string]
     $details.Add((Assert-ForgeLauncherProfileReady -MinecraftDir $MinecraftDir)) | Out-Null
     $details.Add((Assert-InstalledManifestSection -Manifest $Manifest -Section 'client' -Destination (Join-Path $MinecraftDir 'mods') -NoExtraJars)) | Out-Null
+    $details.Add((Assert-InstalledManifestSectionTree -Manifest $Manifest -Section 'config' -Destination (Join-Path $MinecraftDir 'config'))) | Out-Null
+    $details.Add((Assert-InstalledManifestSectionTree -Manifest $Manifest -Section 'root' -Destination $MinecraftDir)) | Out-Null
 
     $details -join '; '
 }
