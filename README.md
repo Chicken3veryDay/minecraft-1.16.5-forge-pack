@@ -7,7 +7,7 @@ This repository hosts the installer and release assets for the Crazy Craft Updat
 - Official source: <https://www.curseforge.com/minecraft/modpacks/crazy-craft-updated>
 - Minecraft: `1.16.5`
 - Forge: `36.2.35`
-- Server launch on the VPS: `java -Xms1G -Xmx4G -XX:+UseG1GC -jar forge.jar nogui`
+- Server launch on the VPS: `java -Xms1G -Xmx2816M -XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200 -XX:+DisableExplicitGC -jar forge.jar nogui`
 
 ## Source Files
 

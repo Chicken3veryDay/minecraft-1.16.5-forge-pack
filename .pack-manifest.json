@@ -2,12 +2,12 @@
     "pack":  "Crazy Craft Updated 0.12.9",
     "minecraft":  "1.16.5",
     "forge":  "36.2.35",
-    "generatedAt":  "2026-06-04T02:30:12.4366529Z",
+    "generatedAt":  "2026-06-04T16:34:13.1937725Z",
     "assetArchive":  {
-                         "name":  "pack-assets-33a2ecc3d430.zip",
-                         "url":  "https://github.com/Chicken3veryDay/minecraft-1.16.5-forge-pack/releases/download/v2026.06.04/pack-assets-33a2ecc3d430.zip",
-                         "size":  1417175590,
-                         "sha256":  "33a2ecc3d430f557aaad24b8c328b8716bf9eae5c48e3d29e8a5cf7a8e83facb",
+                         "name":  "pack-assets-aa38a7eafe4f.zip",
+                         "url":  "https://github.com/Chicken3veryDay/minecraft-1.16.5-forge-pack/releases/download/v2026.06.04/pack-assets-aa38a7eafe4f.zip",
+                         "size":  1417175596,
+                         "sha256":  "aa38a7eafe4f930b6bbce73090117ce6c30368b353c5f8e3f1618cdb069db0e8",
                          "layoutRoot":  ""
                      },
     "client":  [
@@ -4648,8 +4648,8 @@
                    {
                        "name":  "ftbbackups-common.toml",
                        "path":  "Config/ftbbackups-common.toml",
-                       "size":  1240,
-                       "sha256":  "cda0b2a546de30ba5c4c3b9c040384728808d2cee4962270a00ec307eb8239d7"
+                       "size":  1236,
+                       "sha256":  "d4a023d59069cd1bc6cae5e07b695bde9a3f187f4f91dea0276e8983593f04cc"
                    },
                    {
                        "name":  "ftbchunks-client.toml",
@@ -18635,8 +18635,8 @@
                    {
                        "name":  "ftbbackups-common.toml",
                        "path":  "Server/config/ftbbackups-common.toml",
-                       "size":  1240,
-                       "sha256":  "cda0b2a546de30ba5c4c3b9c040384728808d2cee4962270a00ec307eb8239d7"
+                       "size":  1236,
+                       "sha256":  "d4a023d59069cd1bc6cae5e07b695bde9a3f187f4f91dea0276e8983593f04cc"
                    },
                    {
                        "name":  "ftbchunks-client.toml",

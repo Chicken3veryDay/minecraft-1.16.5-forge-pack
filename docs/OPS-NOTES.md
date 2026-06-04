@@ -22,7 +22,8 @@ These notes keep non-secret server details available for future Codex threads wo
 - Client pack file ID `8069957`, SHA-256 `6940b0862291366a0f5d102f5dc1dc9e64dcedbb72024ff26bed0b867ca9fe1b`
 - Server pack file ID `8070007`, SHA-256 `0c7b14464dd659f2d11166822b146f2ab755d3992b4fb0ea029bd1a097991ad3`
 - Official server start command from `start.bat`: `java -Xmx8192M -Xms8192M -jar forge.jar nogui`
-- VPS server launch command: `java -Xms1G -Xmx4G -XX:+UseG1GC -jar forge.jar nogui`
+- VPS server launch command: `java -Xms1G -Xmx2816M -XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200 -XX:+DisableExplicitGC -jar forge.jar nogui`
+- Runtime stability adjustment on 2026-06-04: FTB Backups automatic backups disabled in `config/ftbbackups-common.toml` to avoid backup work during player joins on the 4 GB VPS. Manual server backups should still be taken before destructive operations.
 
 ## VPS Access
 

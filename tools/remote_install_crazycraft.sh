@@ -174,7 +174,7 @@ cat > "${SERVER_DIR}/start-server.sh" <<'SH'
 #!/usr/bin/env bash
 set -euo pipefail
 cd /opt/minecraft/server
-exec /opt/java/mc-java/bin/java -Xms1G -Xmx4G -XX:+UseG1GC -jar forge.jar nogui
+exec /opt/java/mc-java/bin/java -Xms1G -Xmx2816M -XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200 -XX:+DisableExplicitGC -jar forge.jar nogui
 SH
 chmod +x "${SERVER_DIR}/start-server.sh"
 if [[ "$JAVA_BIN" != "/opt/java/mc-java/bin/java" ]]; then

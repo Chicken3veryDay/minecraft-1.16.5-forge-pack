@@ -44,7 +44,7 @@ Defaults:
 - SERVICE_NAME=minecraft
 - WIPE_WORLD=1
 - START_SERVICE=1
-- JAVA_ARGS="-Xms1G -Xmx4G -XX:+UseG1GC"
+- JAVA_ARGS="-Xms1G -Xmx2816M -XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200 -XX:+DisableExplicitGC"
 
 Override example:
 
@@ -55,7 +55,7 @@ The script downloads pack-assets from the GitHub Release URL in .pack-manifest.j
 Manual server launch command:
 
   cd /opt/minecraft/server
-  java -Xms1G -Xmx4G -XX:+UseG1GC -jar forge.jar nogui
+  java -Xms1G -Xmx2816M -XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200 -XX:+DisableExplicitGC -jar forge.jar nogui
 
 Release source hashes
 ---------------------
