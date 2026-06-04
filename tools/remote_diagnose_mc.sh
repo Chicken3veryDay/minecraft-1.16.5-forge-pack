@@ -6,7 +6,7 @@ echo "== service =="
 systemctl status minecraft --no-pager -l || true
 
 echo "== server.properties =="
-sed -n '1,220p' "$SERVER_DIR/server.properties" || true
+grep -E '^(allow-flight|difficulty|enable-rcon|entity-broadcast-range-percentage|level-name|max-players|max-tick-time|online-mode|rcon\.port|simulation-distance|spawn-protection|view-distance)=' "$SERVER_DIR/server.properties" || true
 
 echo "== mods summary =="
 find "$SERVER_DIR/mods" -maxdepth 1 -type f -name '*.jar' | wc -l
@@ -21,4 +21,3 @@ grep -Eai 'unexpected custom data|disconnect|failed|error|exception|mismatch|han
 
 echo "== latest log tail =="
 tail -120 "$SERVER_DIR/logs/latest.log" || true
-

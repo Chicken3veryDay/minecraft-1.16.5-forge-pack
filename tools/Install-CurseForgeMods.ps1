@@ -19,6 +19,38 @@ New-Item -ItemType Directory -Force -Path $CacheRoot | Out-Null
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
+function Get-FileHashString {
+    param(
+        [string]$Path,
+        [ValidateSet('SHA1', 'SHA256')]
+        [string]$Algorithm
+    )
+
+    if (Get-Command Get-FileHash -ErrorAction SilentlyContinue) {
+        return (Get-FileHash -LiteralPath $Path -Algorithm $Algorithm).Hash.ToLowerInvariant()
+    }
+
+    $stream = [System.IO.File]::OpenRead($Path)
+    try {
+        $hasher = if ($Algorithm -eq 'SHA1') {
+            [System.Security.Cryptography.SHA1]::Create()
+        }
+        else {
+            [System.Security.Cryptography.SHA256]::Create()
+        }
+
+        try {
+            return (($hasher.ComputeHash($stream) | ForEach-Object { $_.ToString('x2') }) -join '')
+        }
+        finally {
+            $hasher.Dispose()
+        }
+    }
+    finally {
+        $stream.Dispose()
+    }
+}
+
 function Invoke-CurseApi {
     param([string]$Path)
 
@@ -241,7 +273,7 @@ function Download-File {
 
     $sha1 = @($File.hashes | Where-Object { [int]$_.algo -eq 1 } | Select-Object -First 1).value
     if (-not [string]::IsNullOrWhiteSpace([string]$sha1)) {
-        $actual = (Get-FileHash -LiteralPath $path -Algorithm SHA1).Hash.ToLowerInvariant()
+        $actual = Get-FileHashString -Path $path -Algorithm SHA1
         if ($actual -ne ([string]$sha1).ToLowerInvariant()) {
             throw "SHA-1 mismatch for $($File.fileName). Expected $sha1, got $actual."
         }
@@ -414,7 +446,7 @@ while ($queue.Count -gt 0) {
         sides = $sides
         status = 'installed'
         dependencyOf = $item.dependencyOf
-        sha256 = (Get-FileHash -LiteralPath $cachePath -Algorithm SHA256).Hash.ToLowerInvariant()
+        sha256 = Get-FileHashString -Path $cachePath -Algorithm SHA256
     }) | Out-Null
 }
 

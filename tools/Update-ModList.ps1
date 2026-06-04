@@ -24,8 +24,30 @@ if (-not (Test-Path -LiteralPath $manifestPath)) {
 }
 
 $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+
+function Get-FileHashSha256 {
+    param([string]$Path)
+    if (Get-Command Get-FileHash -ErrorAction SilentlyContinue) {
+        return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+    }
+
+    $stream = [System.IO.File]::OpenRead($Path)
+    try {
+        $sha256 = [System.Security.Cryptography.SHA256]::Create()
+        try {
+            return (($sha256.ComputeHash($stream) | ForEach-Object { $_.ToString('x2') }) -join '')
+        }
+        finally {
+            $sha256.Dispose()
+        }
+    }
+    finally {
+        $stream.Dispose()
+    }
+}
+
 $minimalHash = if (Test-Path -LiteralPath $minimalZipPath) {
-    (Get-FileHash -LiteralPath $minimalZipPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    Get-FileHashSha256 -Path $minimalZipPath
 }
 else {
     ''

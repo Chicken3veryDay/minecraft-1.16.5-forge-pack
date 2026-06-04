@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 import argparse
+import os
 import socket
 import struct
+import sys
 
 
 SERVERDATA_AUTH = 3
@@ -49,12 +51,23 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Send one Minecraft RCON command.")
     parser.add_argument("host")
     parser.add_argument("port", type=int)
-    parser.add_argument("password")
     parser.add_argument("command")
+    password_group = parser.add_mutually_exclusive_group(required=True)
+    password_group.add_argument("--password-env", help="Environment variable containing the RCON password.")
+    password_group.add_argument("--password-stdin", action="store_true", help="Read the RCON password from stdin.")
     parser.add_argument("--timeout", type=float, default=10)
     args = parser.parse_args()
 
-    print(send_command(args.host, args.port, args.password, args.command, args.timeout))
+    if args.password_stdin:
+        password = sys.stdin.readline().rstrip("\r\n")
+        if not password:
+            raise RuntimeError("Missing RCON password on stdin.")
+    else:
+        password = os.environ.get(args.password_env)
+        if not password:
+            raise RuntimeError(f"Missing RCON password env var: {args.password_env}")
+
+    print(send_command(args.host, args.port, password, args.command, args.timeout))
     return 0
 
 

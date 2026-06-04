@@ -2,12 +2,12 @@
     "pack":  "Minecraft 1.16.5 Forge Pack",
     "minecraft":  "1.16.5",
     "forge":  "36.2.42",
-    "generatedAt":  "2026-06-03T22:56:04.9536890Z",
+    "generatedAt":  "2026-06-04T00:01:25.6159654Z",
     "assetArchive":  {
-                         "name":  "pack-assets-fae9ae10f646.zip",
-                         "url":  "https://github.com/Chicken3veryDay/minecraft-1.16.5-forge-pack/releases/download/v2026.06.03/pack-assets-fae9ae10f646.zip",
-                         "size":  1681589022,
-                         "sha256":  "fae9ae10f64681d1c67ff69491cd41531429b501efb4e712db5ffb06b8ff75a4",
+                         "name":  "pack-assets-ea53010738f8.zip",
+                         "url":  "https://github.com/Chicken3veryDay/minecraft-1.16.5-forge-pack/releases/download/v2026.06.03/pack-assets-ea53010738f8.zip",
+                         "size":  1668442527,
+                         "sha256":  "ea53010738f8515437c2796109a810e54598c6d03f90103ca80ec74d71b059fd",
                          "layoutRoot":  ""
                      },
     "client":  [
@@ -100,12 +100,6 @@
                        "path":  "Client/Artifacts-1.16.5-2.10.6.jar",
                        "size":  470061,
                        "sha256":  "5563c9b47265919361ec9323c5a7a8362429747cdc3449e20023fe1bc39d2436"
-                   },
-                   {
-                       "name":  "Atlas-Lib-1.16.5-1.1.3c.jar",
-                       "path":  "Client/Atlas-Lib-1.16.5-1.1.3c.jar",
-                       "size":  50209,
-                       "sha256":  "dd03d054f49c055beca5b327cde795ff4c944b3ccfb88cbe299573e440c50c34"
                    },
                    {
                        "name":  "AttributeFix-1.16.5-10.1.4.jar",
@@ -234,12 +228,6 @@
                        "sha256":  "89abfb4277aa3dee8730df138ebf393aeae479f711ebbea8ede5312b48e3214b"
                    },
                    {
-                       "name":  "champions-forge-1.16.5-2.0.1.16.jar",
-                       "path":  "Client/champions-forge-1.16.5-2.0.1.16.jar",
-                       "size":  222925,
-                       "sha256":  "3998f26510dc492304111e4add8dd7cdc58d69dba6c47ef0ed76f86d25d18cbf"
-                   },
-                   {
                        "name":  "chunksending-1.16.5-2.5.jar",
                        "path":  "Client/chunksending-1.16.5-2.5.jar",
                        "size":  13027,
@@ -288,12 +276,6 @@
                        "sha256":  "9ee5e46e08609bae46d344d736aaf562a498133e6919164649256cbdba219fbc"
                    },
                    {
-                       "name":  "coroutil-forge-1.16.5-1.3.6.jar",
-                       "path":  "Client/coroutil-forge-1.16.5-1.3.6.jar",
-                       "size":  37129,
-                       "sha256":  "cd9a94de2ccffa29fa18466665bd980abf021acb140632e20d7047165f047382"
-                   },
-                   {
                        "name":  "corpse-1.16.5-1.0.6.jar",
                        "path":  "Client/corpse-1.16.5-1.0.6.jar",
                        "size":  203988,
@@ -304,12 +286,6 @@
                        "path":  "Client/CrashAssistant-forge-1.16.1-1.16.5-1.11.9.jar",
                        "size":  3417705,
                        "sha256":  "0dfb7815f059b0cdcdb7daf5a9441fc1de37a33b5ad646a47ce0f18c7f2f6601"
-                   },
-                   {
-                       "name":  "Craziniess Awakened.jar",
-                       "path":  "Client/Craziniess Awakened.jar",
-                       "size":  226446,
-                       "sha256":  "0ceca339e720cc9bbd43fc23bc89682f57e22624060930204c854b8b3ef53d31"
                    },
                    {
                        "name":  "CreativeCore_v2.2.1_mc1.16.5.jar",
@@ -340,12 +316,6 @@
                        "path":  "Client/DivineRPG-1.8.27.jar",
                        "size":  18216367,
                        "sha256":  "dec4318b729f77dc5015b2c147fd85a53208b364b4d80507e9056618069f5595"
-                   },
-                   {
-                       "name":  "dragonfight-1.8.jar",
-                       "path":  "Client/dragonfight-1.8.jar",
-                       "size":  29608,
-                       "sha256":  "1d02462824141cb11b6fbb79117cb9b922df5ed12740e92e10b9d446ca4d1282"
                    },
                    {
                        "name":  "DungeonCrawl-1.16.5-2.3.12.jar",
@@ -492,12 +462,6 @@
                        "sha256":  "3a045ebcdf4ce291022497b1889054d0dd6137075dffc3a3abfc3682fdcf9bee"
                    },
                    {
-                       "name":  "GatewaysToEternity-1.16.5-1.0.2.jar",
-                       "path":  "Client/GatewaysToEternity-1.16.5-1.0.2.jar",
-                       "size":  564724,
-                       "sha256":  "7cf60c0e09ebc4d5e9929c426e4c202dfd857c93f37241d31d65e434c27ae41f"
-                   },
-                   {
                        "name":  "geckolib-forge-1.16.5-3.0.106.jar",
                        "path":  "Client/geckolib-forge-1.16.5-3.0.106.jar",
                        "size":  3559283,
@@ -508,18 +472,6 @@
                        "path":  "Client/goblintraders-1.7.3-1.16.5.jar",
                        "size":  428711,
                        "sha256":  "e2c1168ccd3f072257825f4a61e6175c40a3cf59dc124f9d54b59361fb20616b"
-                   },
-                   {
-                       "name":  "guardvillagers-1.16.5.1.2.4.jar",
-                       "path":  "Client/guardvillagers-1.16.5.1.2.4.jar",
-                       "size":  188171,
-                       "sha256":  "7b7764c511271db4cc5806768ca1d2c68522cae7ba415d6249d1756915a5c4ef"
-                   },
-                   {
-                       "name":  "Hats-1.16.5-10.3.4.jar",
-                       "path":  "Client/Hats-1.16.5-10.3.4.jar",
-                       "size":  1544164,
-                       "sha256":  "f85f3af9222a2752f5620e5c1c225f4a0af2e610b96180c821770f0723194617"
                    },
                    {
                        "name":  "iceandfire-2.1.12-1.16.5-patch-1.jar",
@@ -534,22 +486,10 @@
                        "sha256":  "bec3ebbd6eead24282b075d01b4f48d3e0c2d33ad5be45e0a3270c368ed49d43"
                    },
                    {
-                       "name":  "iChunUtil-1.16.5-10.7.0.jar",
-                       "path":  "Client/iChunUtil-1.16.5-10.7.0.jar",
-                       "size":  597557,
-                       "sha256":  "45726157333a986d9123958ede53f09b7da3f20e88b496f715bbf5e7a4162b8b"
-                   },
-                   {
                        "name":  "infernal-expansion-1.16.5-2.5.0.jar",
                        "path":  "Client/infernal-expansion-1.16.5-2.5.0.jar",
                        "size":  14629220,
                        "sha256":  "df2e79d4e019e80d2ea593a17c309237ac80481ed202f4d4cb7ae1b3c79ac364"
-                   },
-                   {
-                       "name":  "InsaneLib-1.4.2-mc1.16.5.jar",
-                       "path":  "Client/InsaneLib-1.4.2-mc1.16.5.jar",
-                       "size":  45677,
-                       "sha256":  "7bef0a474d0e520e0bb00488ed3575c96657e1e24941eb419b4a10a48a1b6b5c"
                    },
                    {
                        "name":  "inventorypets-1.16.5-2.2.jar",
@@ -568,12 +508,6 @@
                        "path":  "Client/ironfurnaces-1.16.5-2.7.7.jar",
                        "size":  493742,
                        "sha256":  "1203c7ddd5e6d36a7db144f8f425f3d7b23acd89452208fa7d0da5c8c298bba6"
-                   },
-                   {
-                       "name":  "itemcollectors-1.1.12-forge-mc1.16.jar",
-                       "path":  "Client/itemcollectors-1.1.12-forge-mc1.16.jar",
-                       "size":  99093,
-                       "sha256":  "d5622aaf09238d00c78ae8a44e4fa5bdfa96232d82048a18582c917deae0388b"
                    },
                    {
                        "name":  "Jade-1.16.4-2.8.3.jar",
@@ -618,12 +552,6 @@
                        "sha256":  "c7f8d88fa26b70e70bf012f3438d7e23b56050a73d34d43abdbd6a50c372fed3"
                    },
                    {
-                       "name":  "LightAura-4.4.0.jar",
-                       "path":  "Client/LightAura-4.4.0.jar",
-                       "size":  18705,
-                       "sha256":  "358ff6f2f64219561f5fd57e5025f66dd9f1ff02231f64195ad2c28fdbe7df42"
-                   },
-                   {
                        "name":  "lootr-1.16.5-0.2.19.52.jar",
                        "path":  "Client/lootr-1.16.5-0.2.19.52.jar",
                        "size":  377041,
@@ -654,22 +582,10 @@
                        "sha256":  "06d6344a874363acd0f404b3e7c93fa1903e5d82edb405c04ebae1339d5d10d2"
                    },
                    {
-                       "name":  "MobsPropertiesRandomness-3.3.0-mc1.16.5.jar",
-                       "path":  "Client/MobsPropertiesRandomness-3.3.0-mc1.16.5.jar",
-                       "size":  110479,
-                       "sha256":  "2cf244eb10fa3c9d90ddda0553905aef4c923ad0527204d1173f00496002f78e"
-                   },
-                   {
                        "name":  "modernfix-forge-5.18.0+mc1.16.5.jar",
                        "path":  "Client/modernfix-forge-5.18.0+mc1.16.5.jar",
                        "size":  867079,
                        "sha256":  "17ff7a1096275e1c6706a8f65d3f903b5eccb4a979f4aeb5b4302b3966c5bde8"
-                   },
-                   {
-                       "name":  "Morph-1.16.5-10.2.1.jar",
-                       "path":  "Client/Morph-1.16.5-10.2.1.jar",
-                       "size":  1277555,
-                       "sha256":  "f5a150ae5952c8e12829c0c1375d62ef337d325d87dc13aa1885b90bef70b0da"
                    },
                    {
                        "name":  "MouseTweaks-2.14-mc1.16.2.jar",
@@ -712,12 +628,6 @@
                        "path":  "Client/OuterEnd-0.2.14.jar",
                        "size":  57328296,
                        "sha256":  "ae0a9d00fb5f20bd867c758175ac0fd6ed35191469904da78c1eee095dc55ad3"
-                   },
-                   {
-                       "name":  "pandorasbox-2.2.6-1.16.5.jar",
-                       "path":  "Client/pandorasbox-2.2.6-1.16.5.jar",
-                       "size":  375701,
-                       "sha256":  "91c6a1f560dc06380a68c3c7316db30ad8eeb3c0801b857f977d7446d218a082"
                    },
                    {
                        "name":  "Patchouli-1.16.4-53.3.jar",
@@ -810,12 +720,6 @@
                        "sha256":  "4bb51b03efb4efd0fdb6d750789d13f87522e4ab4e2c23f53ebbb842b2bc4151"
                    },
                    {
-                       "name":  "ScalingHealth-1.16.5-4.1.5+11.jar",
-                       "path":  "Client/ScalingHealth-1.16.5-4.1.5+11.jar",
-                       "size":  513375,
-                       "sha256":  "f0d7538b7dbdbce23d369cec592fe7ad2c60951aa38b73ef1b5ec8f2d246f04c"
-                   },
-                   {
                        "name":  "silent-gear-1.16.5-2.6.30.jar",
                        "path":  "Client/silent-gear-1.16.5-2.6.30.jar",
                        "size":  2583204,
@@ -826,12 +730,6 @@
                        "path":  "Client/silent-lib-1.16.3-4.9.6.jar",
                        "size":  247616,
                        "sha256":  "ccd8757d3a8b5447bb4192c1966099cd3671b2f7e49fb0d889f32359ad2d2d45"
-                   },
-                   {
-                       "name":  "smarterfarmers-1.16.5-1.2.1.jar",
-                       "path":  "Client/smarterfarmers-1.16.5-1.2.1.jar",
-                       "size":  33716,
-                       "sha256":  "405f87a08ea15ed6bc4d1c57dc8d4d6a5b6b7898a51a9b30a88fd31ebdd6e34a"
                    },
                    {
                        "name":  "smoothchunk1.16.5-2.0.jar",
@@ -870,18 +768,6 @@
                        "sha256":  "f35cefe2536ec37604c46a9e745ad5c8255eef37be4d88992dbd365a484880a8"
                    },
                    {
-                       "name":  "supermartijn642configlib-1.1.6-forge-mc1.16.jar",
-                       "path":  "Client/supermartijn642configlib-1.1.6-forge-mc1.16.jar",
-                       "size":  205206,
-                       "sha256":  "8a29776877e176b127fad0f3a9e8b193150b2a478b9f9629bdd3c4878df416ed"
-                   },
-                   {
-                       "name":  "supermartijn642corelib-1.1.21-forge-mc1.16.jar",
-                       "path":  "Client/supermartijn642corelib-1.1.21-forge-mc1.16.jar",
-                       "size":  541853,
-                       "sha256":  "5a180e7d63d3b916132bebd2e673779c5bf4b24a1ab6b9adf0d3ec7a3d17ca20"
-                   },
-                   {
                        "name":  "takesapillage-1.0.3-1.16.5.jar",
                        "path":  "Client/takesapillage-1.0.3-1.16.5.jar",
                        "size":  3764552,
@@ -912,12 +798,6 @@
                        "sha256":  "ffc1c7bd80251a3a5de593a8624eda85e6f414f98855177181319e35a88662d1"
                    },
                    {
-                       "name":  "The-Hordes-1.16.5-1.1.5c.jar",
-                       "path":  "Client/The-Hordes-1.16.5-1.1.5c.jar",
-                       "size":  198825,
-                       "sha256":  "ff47da6155dd21faa72bb934c69cabaa6499894cf99f2d3cdad30ddb490ee250"
-                   },
-                   {
                        "name":  "towers_of_the_wild-1.16.3-2.1.0.1.jar",
                        "path":  "Client/towers_of_the_wild-1.16.3-2.1.0.1.jar",
                        "size":  157147,
@@ -940,12 +820,6 @@
                        "path":  "Client/upgrade_aquatic-1.16.5-3.1.2.jar",
                        "size":  3682686,
                        "sha256":  "b14d6f3d8a1ba8a820a3d11e7cfe2d7b65ec84cb2b26f7859d76bab5d473d845"
-                   },
-                   {
-                       "name":  "watut-forge-1.16.5-1.0.14.jar",
-                       "path":  "Client/watut-forge-1.16.5-1.0.14.jar",
-                       "size":  162606,
-                       "sha256":  "9493bb15b77e2ec15bc46bcff111b8d517a35747b0ddc58807cd52ebe30baa78"
                    },
                    {
                        "name":  "Waystones_1.16.5-7.6.4.jar",
@@ -972,6 +846,12 @@
                        "path":  "Config/modernfix-mixins.properties",
                        "size":  203,
                        "sha256":  "1a477ecd627bbe94b45e2b7f6b5c097b448486650d735c9a745029f5518f983e"
+                   },
+                   {
+                       "name":  "theabyss2.json",
+                       "path":  "Config/theabyss2.json",
+                       "size":  279,
+                       "sha256":  "e8e7d0af44287d8550b2f0eeccf5c732c72bde0986850b810aaa1da61ee3bbd8"
                    }
                ],
     "shaderpacks":  [
@@ -1066,12 +946,6 @@
                        "path":  "Server/Artifacts-1.16.5-2.10.6.jar",
                        "size":  470061,
                        "sha256":  "5563c9b47265919361ec9323c5a7a8362429747cdc3449e20023fe1bc39d2436"
-                   },
-                   {
-                       "name":  "Atlas-Lib-1.16.5-1.1.3c.jar",
-                       "path":  "Server/Atlas-Lib-1.16.5-1.1.3c.jar",
-                       "size":  50209,
-                       "sha256":  "dd03d054f49c055beca5b327cde795ff4c944b3ccfb88cbe299573e440c50c34"
                    },
                    {
                        "name":  "AttributeFix-1.16.5-10.1.4.jar",
@@ -1188,12 +1062,6 @@
                        "sha256":  "0e294b86d831f5afa162c1d14cd1832541768341f92493ded9e7eb0377d06d2e"
                    },
                    {
-                       "name":  "champions-forge-1.16.5-2.0.1.16.jar",
-                       "path":  "Server/champions-forge-1.16.5-2.0.1.16.jar",
-                       "size":  222925,
-                       "sha256":  "3998f26510dc492304111e4add8dd7cdc58d69dba6c47ef0ed76f86d25d18cbf"
-                   },
-                   {
                        "name":  "chunksending-1.16.5-2.5.jar",
                        "path":  "Server/chunksending-1.16.5-2.5.jar",
                        "size":  13027,
@@ -1230,22 +1098,10 @@
                        "sha256":  "07f1a43915116527e488bad92609516f1c241a64d8c9c887e6a9f522f8accfe3"
                    },
                    {
-                       "name":  "coroutil-forge-1.16.5-1.3.6.jar",
-                       "path":  "Server/coroutil-forge-1.16.5-1.3.6.jar",
-                       "size":  37129,
-                       "sha256":  "cd9a94de2ccffa29fa18466665bd980abf021acb140632e20d7047165f047382"
-                   },
-                   {
                        "name":  "corpse-1.16.5-1.0.6.jar",
                        "path":  "Server/corpse-1.16.5-1.0.6.jar",
                        "size":  203988,
                        "sha256":  "c3b1e2ac93165045f7eb88871e06d5269ee4ca0bf41a46bb86f62075c9f778ef"
-                   },
-                   {
-                       "name":  "Craziniess Awakened.jar",
-                       "path":  "Server/Craziniess Awakened.jar",
-                       "size":  226446,
-                       "sha256":  "0ceca339e720cc9bbd43fc23bc89682f57e22624060930204c854b8b3ef53d31"
                    },
                    {
                        "name":  "curios-forge-1.16.5-4.1.0.0.jar",
@@ -1270,12 +1126,6 @@
                        "path":  "Server/DivineRPG-1.8.27.jar",
                        "size":  18216367,
                        "sha256":  "dec4318b729f77dc5015b2c147fd85a53208b364b4d80507e9056618069f5595"
-                   },
-                   {
-                       "name":  "dragonfight-1.8.jar",
-                       "path":  "Server/dragonfight-1.8.jar",
-                       "size":  29608,
-                       "sha256":  "1d02462824141cb11b6fbb79117cb9b922df5ed12740e92e10b9d446ca4d1282"
                    },
                    {
                        "name":  "DungeonCrawl-1.16.5-2.3.12.jar",
@@ -1392,12 +1242,6 @@
                        "sha256":  "3a045ebcdf4ce291022497b1889054d0dd6137075dffc3a3abfc3682fdcf9bee"
                    },
                    {
-                       "name":  "GatewaysToEternity-1.16.5-1.0.2.jar",
-                       "path":  "Server/GatewaysToEternity-1.16.5-1.0.2.jar",
-                       "size":  564724,
-                       "sha256":  "7cf60c0e09ebc4d5e9929c426e4c202dfd857c93f37241d31d65e434c27ae41f"
-                   },
-                   {
                        "name":  "geckolib-forge-1.16.5-3.0.106.jar",
                        "path":  "Server/geckolib-forge-1.16.5-3.0.106.jar",
                        "size":  3559283,
@@ -1410,40 +1254,16 @@
                        "sha256":  "e2c1168ccd3f072257825f4a61e6175c40a3cf59dc124f9d54b59361fb20616b"
                    },
                    {
-                       "name":  "guardvillagers-1.16.5.1.2.4.jar",
-                       "path":  "Server/guardvillagers-1.16.5.1.2.4.jar",
-                       "size":  188171,
-                       "sha256":  "7b7764c511271db4cc5806768ca1d2c68522cae7ba415d6249d1756915a5c4ef"
-                   },
-                   {
-                       "name":  "Hats-1.16.5-10.3.4.jar",
-                       "path":  "Server/Hats-1.16.5-10.3.4.jar",
-                       "size":  1544164,
-                       "sha256":  "f85f3af9222a2752f5620e5c1c225f4a0af2e610b96180c821770f0723194617"
-                   },
-                   {
                        "name":  "iceandfire-2.1.12-1.16.5-patch-1.jar",
                        "path":  "Server/iceandfire-2.1.12-1.16.5-patch-1.jar",
                        "size":  21463531,
                        "sha256":  "29e66bd0199169649f6de4e4b0ef00a67555eb348f10b8d01794c20d67f128c8"
                    },
                    {
-                       "name":  "iChunUtil-1.16.5-10.7.0.jar",
-                       "path":  "Server/iChunUtil-1.16.5-10.7.0.jar",
-                       "size":  597557,
-                       "sha256":  "45726157333a986d9123958ede53f09b7da3f20e88b496f715bbf5e7a4162b8b"
-                   },
-                   {
                        "name":  "infernal-expansion-1.16.5-2.5.0.jar",
                        "path":  "Server/infernal-expansion-1.16.5-2.5.0.jar",
                        "size":  14629220,
                        "sha256":  "df2e79d4e019e80d2ea593a17c309237ac80481ed202f4d4cb7ae1b3c79ac364"
-                   },
-                   {
-                       "name":  "InsaneLib-1.4.2-mc1.16.5.jar",
-                       "path":  "Server/InsaneLib-1.4.2-mc1.16.5.jar",
-                       "size":  45677,
-                       "sha256":  "7bef0a474d0e520e0bb00488ed3575c96657e1e24941eb419b4a10a48a1b6b5c"
                    },
                    {
                        "name":  "inventorypets-1.16.5-2.2.jar",
@@ -1464,12 +1284,6 @@
                        "sha256":  "1203c7ddd5e6d36a7db144f8f425f3d7b23acd89452208fa7d0da5c8c298bba6"
                    },
                    {
-                       "name":  "itemcollectors-1.1.12-forge-mc1.16.jar",
-                       "path":  "Server/itemcollectors-1.1.12-forge-mc1.16.jar",
-                       "size":  99093,
-                       "sha256":  "d5622aaf09238d00c78ae8a44e4fa5bdfa96232d82048a18582c917deae0388b"
-                   },
-                   {
                        "name":  "L_Enders Cataclysm-0.48 Changed Theme -1.16.5.jar",
                        "path":  "Server/L_Enders Cataclysm-0.48 Changed Theme -1.16.5.jar",
                        "size":  12700153,
@@ -1480,12 +1294,6 @@
                        "path":  "Server/letmedespawn-forge-1.3.2b.jar",
                        "size":  85166,
                        "sha256":  "c7f8d88fa26b70e70bf012f3438d7e23b56050a73d34d43abdbd6a50c372fed3"
-                   },
-                   {
-                       "name":  "LightAura-4.4.0.jar",
-                       "path":  "Server/LightAura-4.4.0.jar",
-                       "size":  18705,
-                       "sha256":  "358ff6f2f64219561f5fd57e5025f66dd9f1ff02231f64195ad2c28fdbe7df42"
                    },
                    {
                        "name":  "lootr-1.16.5-0.2.19.52.jar",
@@ -1518,22 +1326,10 @@
                        "sha256":  "06d6344a874363acd0f404b3e7c93fa1903e5d82edb405c04ebae1339d5d10d2"
                    },
                    {
-                       "name":  "MobsPropertiesRandomness-3.3.0-mc1.16.5.jar",
-                       "path":  "Server/MobsPropertiesRandomness-3.3.0-mc1.16.5.jar",
-                       "size":  110479,
-                       "sha256":  "2cf244eb10fa3c9d90ddda0553905aef4c923ad0527204d1173f00496002f78e"
-                   },
-                   {
                        "name":  "modernfix-forge-5.18.0+mc1.16.5.jar",
                        "path":  "Server/modernfix-forge-5.18.0+mc1.16.5.jar",
                        "size":  867079,
                        "sha256":  "17ff7a1096275e1c6706a8f65d3f903b5eccb4a979f4aeb5b4302b3966c5bde8"
-                   },
-                   {
-                       "name":  "Morph-1.16.5-10.2.1.jar",
-                       "path":  "Server/Morph-1.16.5-10.2.1.jar",
-                       "size":  1277555,
-                       "sha256":  "f5a150ae5952c8e12829c0c1375d62ef337d325d87dc13aa1885b90bef70b0da"
                    },
                    {
                        "name":  "mowziesmobs-1.5.27.jar",
@@ -1564,12 +1360,6 @@
                        "path":  "Server/OuterEnd-0.2.14.jar",
                        "size":  57328296,
                        "sha256":  "ae0a9d00fb5f20bd867c758175ac0fd6ed35191469904da78c1eee095dc55ad3"
-                   },
-                   {
-                       "name":  "pandorasbox-2.2.6-1.16.5.jar",
-                       "path":  "Server/pandorasbox-2.2.6-1.16.5.jar",
-                       "size":  375701,
-                       "sha256":  "91c6a1f560dc06380a68c3c7316db30ad8eeb3c0801b857f977d7446d218a082"
                    },
                    {
                        "name":  "Patchouli-1.16.4-53.3.jar",
@@ -1650,12 +1440,6 @@
                        "sha256":  "4bb51b03efb4efd0fdb6d750789d13f87522e4ab4e2c23f53ebbb842b2bc4151"
                    },
                    {
-                       "name":  "ScalingHealth-1.16.5-4.1.5+11.jar",
-                       "path":  "Server/ScalingHealth-1.16.5-4.1.5+11.jar",
-                       "size":  513375,
-                       "sha256":  "f0d7538b7dbdbce23d369cec592fe7ad2c60951aa38b73ef1b5ec8f2d246f04c"
-                   },
-                   {
                        "name":  "silent-gear-1.16.5-2.6.30.jar",
                        "path":  "Server/silent-gear-1.16.5-2.6.30.jar",
                        "size":  2583204,
@@ -1666,12 +1450,6 @@
                        "path":  "Server/silent-lib-1.16.3-4.9.6.jar",
                        "size":  247616,
                        "sha256":  "ccd8757d3a8b5447bb4192c1966099cd3671b2f7e49fb0d889f32359ad2d2d45"
-                   },
-                   {
-                       "name":  "smarterfarmers-1.16.5-1.2.1.jar",
-                       "path":  "Server/smarterfarmers-1.16.5-1.2.1.jar",
-                       "size":  33716,
-                       "sha256":  "405f87a08ea15ed6bc4d1c57dc8d4d6a5b6b7898a51a9b30a88fd31ebdd6e34a"
                    },
                    {
                        "name":  "smoothchunk1.16.5-2.0.jar",
@@ -1704,18 +1482,6 @@
                        "sha256":  "f35cefe2536ec37604c46a9e745ad5c8255eef37be4d88992dbd365a484880a8"
                    },
                    {
-                       "name":  "supermartijn642configlib-1.1.6-forge-mc1.16.jar",
-                       "path":  "Server/supermartijn642configlib-1.1.6-forge-mc1.16.jar",
-                       "size":  205206,
-                       "sha256":  "8a29776877e176b127fad0f3a9e8b193150b2a478b9f9629bdd3c4878df416ed"
-                   },
-                   {
-                       "name":  "supermartijn642corelib-1.1.21-forge-mc1.16.jar",
-                       "path":  "Server/supermartijn642corelib-1.1.21-forge-mc1.16.jar",
-                       "size":  541853,
-                       "sha256":  "5a180e7d63d3b916132bebd2e673779c5bf4b24a1ab6b9adf0d3ec7a3d17ca20"
-                   },
-                   {
                        "name":  "takesapillage-1.0.3-1.16.5.jar",
                        "path":  "Server/takesapillage-1.0.3-1.16.5.jar",
                        "size":  3764552,
@@ -1740,12 +1506,6 @@
                        "sha256":  "ffc1c7bd80251a3a5de593a8624eda85e6f414f98855177181319e35a88662d1"
                    },
                    {
-                       "name":  "The-Hordes-1.16.5-1.1.5c.jar",
-                       "path":  "Server/The-Hordes-1.16.5-1.1.5c.jar",
-                       "size":  198825,
-                       "sha256":  "ff47da6155dd21faa72bb934c69cabaa6499894cf99f2d3cdad30ddb490ee250"
-                   },
-                   {
                        "name":  "towers_of_the_wild-1.16.3-2.1.0.1.jar",
                        "path":  "Server/towers_of_the_wild-1.16.3-2.1.0.1.jar",
                        "size":  157147,
@@ -1768,12 +1528,6 @@
                        "path":  "Server/upgrade_aquatic-1.16.5-3.1.2.jar",
                        "size":  3682686,
                        "sha256":  "b14d6f3d8a1ba8a820a3d11e7cfe2d7b65ec84cb2b26f7859d76bab5d473d845"
-                   },
-                   {
-                       "name":  "watut-forge-1.16.5-1.0.14.jar",
-                       "path":  "Server/watut-forge-1.16.5-1.0.14.jar",
-                       "size":  162606,
-                       "sha256":  "9493bb15b77e2ec15bc46bcff111b8d517a35747b0ddc58807cd52ebe30baa78"
                    },
                    {
                        "name":  "Waystones_1.16.5-7.6.4.jar",
