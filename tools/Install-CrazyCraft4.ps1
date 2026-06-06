@@ -832,6 +832,60 @@ function Get-FirstMatchingLine([string[]]$Lines, [string[]]$Patterns) {
     return ''
 }
 
+function Get-ConfigMatchingLine([string]$Path, [string[]]$Patterns) {
+    if (-not (Test-Path -LiteralPath $Path)) { return '' }
+    Get-FirstMatchingLine -Lines @(Get-Content -LiteralPath $Path -ErrorAction SilentlyContinue) -Patterns $Patterns
+}
+
+function Get-KnownModUpdateNotices([string[]]$Lines) {
+    $notices = @()
+    $checks = @(
+        @{
+            Name = 'Food Plus updater'
+            Patterns = @('Food Plus.*Unable to connect to the Food Plus Update Server', 'FoodPlus.*Could not locate folder')
+        },
+        @{
+            Name = 'HBM upstream notice'
+            Patterns = @("New version .*BETA .*available", "Found version 1\.0\.27")
+        },
+        @{
+            Name = 'Legends upstream notice'
+            Patterns = @("Legends Mod: You're outdated", 'LegendsVersionChecker')
+        },
+        @{
+            Name = 'CodeChickenCore updater'
+            Patterns = @('codechickencore\.update')
+        },
+        @{
+            Name = 'iChunUtil legacy endpoint'
+            Patterns = @('iChunUtil Patron Getter Thread.*FileNotFoundException', 'raw\.githubusercontent\.com/iChun/iChunUtil')
+        }
+    )
+
+    foreach ($check in $checks) {
+        $line = Get-FirstMatchingLine -Lines $Lines -Patterns ([string[]]$check.Patterns)
+        if (-not [string]::IsNullOrWhiteSpace($line)) {
+            $notices += [pscustomobject]@{ Name = [string]$check.Name; Line = $line }
+        }
+    }
+    @($notices)
+}
+
+function Write-ModUpdateNoticeDiagnostics([string[]]$Lines) {
+    $notices = @(Get-KnownModUpdateNotices -Lines $Lines)
+    if ($notices.Count -eq 0) {
+        Write-DiagnosticValue 'Known mod update notices' 'No'
+        return
+    }
+
+    Write-Rule -Title 'Known mod update notices' -Color 'DarkGray'
+    foreach ($notice in $notices) {
+        Write-KeyValue -Name $notice.Name -Value $notice.Line
+    }
+    Write-StatusLine -Kind 'INFO' -Message 'FoodPlus/CodeChicken lines can remain in latest.log from before their updater configs were disabled; relaunch Minecraft to refresh the log.'
+    Write-StatusLine -Kind 'WARN' -Message 'HBM/Legends content updates are not auto-installed on one client only; the server and every client must move together after compatibility testing.'
+}
+
 function Get-LogTimeGaps([string[]]$Lines, [int]$ThresholdSeconds = 10) {
     $gaps = @()
     $lastTime = $null
@@ -1006,6 +1060,8 @@ function Diagnose-Client {
     Write-DiagnosticValue 'PortalGun sound pack' (Format-PortalGunSoundPackStatus -Status (Get-PortalGunSoundPackStatus -Path $portalGunSoundPath))
     $notEnoughItemsStatus = Get-NotEnoughItemsStatus -Path $ClientPath
     Write-DiagnosticValue 'NotEnoughItems dependency' (Format-NotEnoughItemsStatus -Status $notEnoughItemsStatus)
+    Write-DiagnosticValue 'FoodPlus updater config' (Get-ConfigMatchingLine -Path (Join-Path $ClientPath 'config\FoodPlus.cfg') -Patterns @('Enable updater'))
+    Write-DiagnosticValue 'CodeChicken update config' (Get-ConfigMatchingLine -Path (Join-Path $ClientPath 'config\CodeChickenCore.cfg') -Patterns @('checkUpdates'))
 
     $stillActive = @(Get-ModFilesByPatterns -ModsRoot (Join-Path $ClientPath 'mods') -Patterns $ClientFpsDisabledMods)
     if ($stillActive.Count -gt 0) {
@@ -1041,6 +1097,7 @@ function Diagnose-Client {
         }
         Write-DiagnosticValue 'Join client-thread timeout' (Get-FirstMatchingLine -Lines $lines -Patterns @('Timeout waiting for client thread to catch up', 'FMLClientHandler\.waitForPlayClient'))
         Write-DiagnosticValue 'Log mod rejections' (Get-FirstMatchingLine -Lines $lines -Patterns @('Mod rejections', 'FMLMod:HatStand', 'FMLMod:Hats'))
+        Write-ModUpdateNoticeDiagnostics -Lines $lines
 
         $gaps = @(Get-LogTimeGaps -Lines $lines -ThresholdSeconds 10)
         if ($gaps.Count -eq 0) {
@@ -1465,6 +1522,13 @@ function Apply-ClientPerformanceDefaults([string]$Path) {
     Set-TextReplacement -Path (Join-Path $Path 'config\fastcraft.ini') -Pattern '^maxViewDistance = \d+\s*$' -Replacement 'maxViewDistance = 8'
 }
 
+function Apply-ClientUpdateNoticeDefaults([string]$Path) {
+    Write-Step 'Applying legacy mod updater defaults'
+    Set-TextReplacement -Path (Join-Path $Path 'config\FoodPlus.cfg') -Pattern '^\s*B:"Enable updater"=true\s*$' -Replacement '    B:"Enable updater"=false'
+    Set-TextReplacement -Path (Join-Path $Path 'config\CodeChickenCore.cfg') -Pattern '^\s*checkUpdates=true\s*$' -Replacement 'checkUpdates=false'
+    Add-Completion 'Legacy FoodPlus and CodeChicken update popups are disabled when their configs are present.'
+}
+
 function Install-Client {
     Stop-MinecraftProcesses
     Ensure-Directory -Path $CacheRoot
@@ -1529,6 +1593,7 @@ function Install-Client {
     Ensure-NotEnoughItemsClientMod -Path $ClientPath
     Apply-ClientPerformanceDefaults -Path $ClientPath
     Add-Completion 'Low-FPS client options and config defaults applied.'
+    Apply-ClientUpdateNoticeDefaults -Path $ClientPath
     Disable-ClientFpsMods -Path $ClientPath
     Ensure-MinecraftBaseMetadata
     Add-Completion 'Minecraft 1.7.10 base metadata is available.'
