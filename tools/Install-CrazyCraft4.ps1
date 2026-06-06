@@ -21,10 +21,10 @@ $ForgeVersionId = '1.7.10-Forge10.13.4.1558-1.7.10'
 $ForgeInstallerUrl = 'https://maven.minecraftforge.net/net/minecraftforge/forge/1.7.10-10.13.4.1558-1.7.10/forge-1.7.10-10.13.4.1558-1.7.10-installer.jar'
 $ForgeUniversalUrl = 'https://maven.minecraftforge.net/net/minecraftforge/forge/1.7.10-10.13.4.1558-1.7.10/forge-1.7.10-10.13.4.1558-1.7.10-universal.jar'
 $ClientZip = @{
-    Name = 'CrazyCraft4.zip'
-    Url = 'https://vl4.voidswrath.com/releases/CrazyCraft4.zip'
-    Size = 729811815
-    Sha256 = '025047552a2f98337c2b5f2c66e1c5bc8391d0468137a3b5ee400c4834a4823a'
+    Name = 'CrazyCraft4ClientPayload.zip'
+    Url = 'https://vl4.voidswrath.com/releases/CrazyCraft4Server.zip'
+    Size = 729602057
+    Sha256 = 'eae8930d4a83bafcc32681b285dc0c663faa6a4a505550b5d254031a5e377c97'
 }
 $ServerZip = @{
     Name = 'CrazyCraft4Server.zip'
@@ -358,11 +358,9 @@ function Remove-ServerRootFilesFromClient([string]$Path) {
 function Install-Client {
     Ensure-Directory -Path $CacheRoot
     Ensure-PackZip $ClientZip | Out-Null
-    Ensure-PackZip $ServerZip | Out-Null
     Ensure-ForgeInstaller | Out-Null
     if ($VerifyOnly) {
         Verify-PackZip $ClientZip
-        Verify-PackZip $ServerZip
         return
     }
     if ($DownloadOnly) { return }
@@ -373,15 +371,8 @@ function Install-Client {
     foreach ($dir in @('mods', 'config', 'scripts', 'resources', 'resourcepacks', 'shaderpacks')) {
         Remove-DirectoryIfPresent -Path (Join-Path $ClientPath $dir)
     }
-    Expand-PackArchive -ArchivePath (Get-PackZipPath $ClientZip) -DestinationPath $ClientPath -Activity 'Extracting Crazy Craft 4.0 client'
-    if ((Get-ModJarCount -Path $ClientPath) -eq 0) {
-        Write-Warning 'The official client zip did not extract usable mod files with portable extractors; falling back to the verified official server pack payload for client files.'
-        foreach ($path in @('mods', 'config', 'hats', 'legends', 'libraries')) {
-            Remove-DirectoryIfPresent -Path (Join-Path $ClientPath $path)
-        }
-        Expand-PackArchive -ArchivePath (Get-PackZipPath $ServerZip) -DestinationPath $ClientPath -Activity 'Extracting Crazy Craft 4.0 fallback client payload'
-        Remove-ServerRootFilesFromClient -Path $ClientPath
-    }
+    Expand-PackArchive -ArchivePath (Get-PackZipPath $ClientZip) -DestinationPath $ClientPath -Activity 'Extracting Crazy Craft 4.0 client payload'
+    Remove-ServerRootFilesFromClient -Path $ClientPath
     $modCount = Get-ModJarCount -Path $ClientPath
     if ($modCount -lt 60) {
         throw "Client staging failed; expected Crazy Craft mod files, found only $modCount mod jar(s)."
