@@ -27,11 +27,13 @@ $ProfileKey = 'crazy-craft-4.0-official'
 $ForgeVersionId = '1.7.10-Forge10.13.4.1558-1.7.10'
 $ClientFpsDisabledMods = @(
     'Controlling.jar',
-    'Hats.jar',
-    'HatStand.jar',
     'InventoryTweaksdev.jar',
     'journeymappunlimited.jar',
     'Waila.jar'
+)
+$ServerHandshakeRequiredClientMods = @(
+    'Hats.jar',
+    'HatStand.jar'
 )
 $MenuFpsDiagnosticRootName = 'mods.disabled-diagnostic'
 $MenuFpsDiagnosticBatches = @(
@@ -44,8 +46,8 @@ $MenuFpsDiagnosticBatches = @(
     @{
         Id = 2
         Name = 'client-render-overlays'
-        Description = 'Client-only overlays, hats, maps, inventory hooks, and iChun render toys'
-        Mods = @('Controlling.jar', 'InventoryTweaksdev.jar', 'journeymappunlimited.jar', 'Waila.jar', 'Hats.jar', 'HatStand.jar', 'PortalGunbeta.jar', 'GravityGun.jar')
+        Description = 'Client-only overlays, maps, inventory hooks, and iChun render toys'
+        Mods = @('Controlling.jar', 'InventoryTweaksdev.jar', 'journeymappunlimited.jar', 'Waila.jar', 'PortalGunbeta.jar', 'GravityGun.jar')
     },
     @{
         Id = 3
@@ -996,6 +998,10 @@ function Diagnose-Client {
         Write-DiagnosticValue 'Disabled FPS mods' (($fpsDisabled | Select-Object -ExpandProperty Name | Sort-Object) -join ', ')
     }
     Write-DiagnosticValue 'Diagnostic-disabled mod count' $diagnosticDisabled.Count
+    $handshakeStatus = Get-ServerHandshakeClientModStatus -Path $ClientPath
+    Write-DiagnosticValue 'Server-required mods active' (Format-ModNameList -Names $handshakeStatus.Active)
+    Write-DiagnosticValue 'Server-required mods disabled' (Format-ModNameList -Names $handshakeStatus.Disabled)
+    Write-DiagnosticValue 'Server-required mods missing' (Format-ModNameList -Names $handshakeStatus.Missing)
     $portalGunSoundPath = Join-Path (Join-Path $ClientPath 'mods') ([string]$PortalGunSoundPack.Name)
     Write-DiagnosticValue 'PortalGun sound pack' (Format-PortalGunSoundPackStatus -Status (Get-PortalGunSoundPackStatus -Path $portalGunSoundPath))
     $notEnoughItemsStatus = Get-NotEnoughItemsStatus -Path $ClientPath
@@ -1034,6 +1040,7 @@ function Diagnose-Client {
             Write-DiagnosticValue 'NEI missing-class log hits' 'No'
         }
         Write-DiagnosticValue 'Join client-thread timeout' (Get-FirstMatchingLine -Lines $lines -Patterns @('Timeout waiting for client thread to catch up', 'FMLClientHandler\.waitForPlayClient'))
+        Write-DiagnosticValue 'Log mod rejections' (Get-FirstMatchingLine -Lines $lines -Patterns @('Mod rejections', 'FMLMod:HatStand', 'FMLMod:Hats'))
 
         $gaps = @(Get-LogTimeGaps -Lines $lines -ThresholdSeconds 10)
         if ($gaps.Count -eq 0) {
@@ -1082,6 +1089,87 @@ function Remove-ServerRootFilesFromClient([string]$Path) {
         if (Test-Path -LiteralPath $target) {
             Remove-Item -LiteralPath $target -Force
         }
+    }
+}
+
+function Get-ServerHandshakeClientModStatus([string]$Path) {
+    $modsRoot = Join-Path $Path 'mods'
+    $disabledRoots = @(
+        (Join-Path $Path 'mods.disabled-client-fps'),
+        (Join-Path $Path $MenuFpsDiagnosticRootName)
+    )
+
+    $active = @()
+    $disabled = @()
+    $missing = @()
+    foreach ($name in $ServerHandshakeRequiredClientMods) {
+        $activeMatches = @()
+        if (Test-Path -LiteralPath $modsRoot) {
+            $activeMatches = @(Get-ChildItem -LiteralPath $modsRoot -Recurse -File -Filter $name -ErrorAction SilentlyContinue)
+        }
+        if ($activeMatches.Count -gt 0) {
+            $active += $name
+            continue
+        }
+
+        $disabledMatches = @()
+        foreach ($root in $disabledRoots) {
+            if (Test-Path -LiteralPath $root) {
+                $disabledMatches += Get-ChildItem -LiteralPath $root -Recurse -File -Filter $name -ErrorAction SilentlyContinue
+            }
+        }
+        if ($disabledMatches.Count -gt 0) {
+            $disabled += $name
+        } else {
+            $missing += $name
+        }
+    }
+
+    [pscustomobject]@{
+        Active = $active
+        Disabled = $disabled
+        Missing = $missing
+    }
+}
+
+function Format-ModNameList([string[]]$Names) {
+    if ($null -eq $Names -or $Names.Count -eq 0) { return 'No' }
+    ($Names | Sort-Object) -join ', '
+}
+
+function Restore-ServerHandshakeClientMods([string]$Path) {
+    $modsRoot = Join-Path $Path 'mods'
+    Ensure-Directory -Path $modsRoot
+    $disabledRoots = @(
+        (Join-Path $Path 'mods.disabled-client-fps'),
+        (Join-Path $Path $MenuFpsDiagnosticRootName)
+    )
+
+    $restored = 0
+    foreach ($name in $ServerHandshakeRequiredClientMods) {
+        if (@(Get-ChildItem -LiteralPath $modsRoot -Recurse -File -Filter $name -ErrorAction SilentlyContinue).Count -gt 0) {
+            continue
+        }
+        foreach ($root in $disabledRoots) {
+            if (-not (Test-Path -LiteralPath $root)) { continue }
+            $source = @(Get-ChildItem -LiteralPath $root -Recurse -File -Filter $name -ErrorAction SilentlyContinue | Select-Object -First 1)
+            if ($source.Count -eq 0) { continue }
+            $destination = Join-Path $modsRoot $source[0].Name
+            Move-Item -LiteralPath $source[0].FullName -Destination $destination -Force
+            Write-StatusLine -Kind 'OK' -Message "Restored server-required client mod: $($source[0].Name)"
+            $restored++
+            break
+        }
+    }
+
+    $status = Get-ServerHandshakeClientModStatus -Path $Path
+    if ($status.Missing.Count -gt 0 -or $status.Disabled.Count -gt 0) {
+        throw "Server-required client mods are not active. Disabled: $(Format-ModNameList -Names $status.Disabled). Missing: $(Format-ModNameList -Names $status.Missing)."
+    }
+    if ($restored -gt 0) {
+        Add-Completion "Restored $restored server-required client mod jar(s) for server joining."
+    } else {
+        Add-Completion 'Server-required client mods are active for server joining.'
     }
 }
 
@@ -1426,6 +1514,7 @@ function Install-Client {
         Remove-ServerRootFilesFromClient -Path $ClientPath
         Add-Completion 'Client payload staged and server-only root files removed.'
     }
+    Restore-ServerHandshakeClientMods -Path $ClientPath
     <#
     If all required mod jars are already present, do not refresh configs from the
     payload. Refreshing configs would require downloading the large archive again,
