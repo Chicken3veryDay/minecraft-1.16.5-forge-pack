@@ -81,19 +81,141 @@ $ServerZip = @{
     Size = 729602057
     Sha256 = 'eae8930d4a83bafcc32681b285dc0c663faa6a4a505550b5d254031a5e377c97'
 }
+$script:CompletionItems = @()
+$script:FailureSummary = $null
+$script:ProgressRenderState = @{}
+
+function Write-Rule([string]$Title = '', [string]$Color = 'DarkCyan') {
+    $width = 72
+    $line = '=' * $width
+    Write-Host ''
+    Write-Host $line -ForegroundColor $Color
+    if (-not [string]::IsNullOrWhiteSpace($Title)) {
+        Write-Host $Title -ForegroundColor Cyan
+        Write-Host $line -ForegroundColor $Color
+    }
+}
+
+function Write-StatusLine([string]$Kind, [string]$Message) {
+    switch ($Kind.ToUpperInvariant()) {
+        'OK' { $label = '[OK]  '; $color = 'Green' }
+        'WARN' { $label = '[WARN]'; $color = 'Yellow' }
+        'FAIL' { $label = '[FAIL]'; $color = 'Red' }
+        'RUN' { $label = '[RUN] '; $color = 'Magenta' }
+        default { $label = '[INFO]'; $color = 'Cyan' }
+    }
+    Write-Host $label -NoNewline -ForegroundColor $color
+    Write-Host " $Message"
+}
+
+function Write-KeyValue([string]$Name, $Value) {
+    $text = [string]$Value
+    if ([string]::IsNullOrWhiteSpace($text)) { $text = '(not found)' }
+    Write-Host ("  {0,-28} {1}" -f ($Name + ':'), $text)
+}
+
+function Write-CommandHint([string]$Command) {
+    Write-StatusLine -Kind 'RUN' -Message $Command
+}
+
+function Write-InstallerHeader {
+    Write-Rule -Title "$PackName installer"
+    Write-KeyValue -Name 'Minecraft' -Value '1.7.10'
+    Write-KeyValue -Name 'Forge' -Value "10.13.4.1558 ($ForgeVersionId)"
+    Write-KeyValue -Name 'Pack root' -Value $PackRoot
+    Write-Host ''
+}
+
+function Add-Completion([string]$Message) {
+    if (-not [string]::IsNullOrWhiteSpace($Message)) {
+        $script:CompletionItems += $Message
+    }
+}
+
+function Write-CompletionSummary {
+    Write-Rule -Title 'Installer summary'
+    if ($script:CompletionItems.Count -eq 0) {
+        Write-StatusLine -Kind 'INFO' -Message 'No install changes were completed.'
+    } else {
+        foreach ($item in $script:CompletionItems) {
+            Write-StatusLine -Kind 'OK' -Message $item
+        }
+    }
+    if (-not [string]::IsNullOrWhiteSpace($script:FailureSummary)) {
+        Write-StatusLine -Kind 'FAIL' -Message $script:FailureSummary
+    }
+    Write-Host ''
+}
 
 function Write-Step([string]$Message) {
-    Write-Host ''
-    Write-Host "== $Message ==" -ForegroundColor Cyan
+    Write-Rule -Title $Message
     Write-Progress -Id 1 -Activity $PackName -Status $Message -PercentComplete 0
 }
 
+function Test-ConsoleProgress {
+    try {
+        return [Environment]::UserInteractive -and -not [Console]::IsOutputRedirected
+    } catch {
+        return $false
+    }
+}
+
+function Format-ByteRate([double]$BytesPerSecond) {
+    if ($BytesPerSecond -ge 1GB) { return ('{0:N1} GB/s' -f ($BytesPerSecond / 1GB)) }
+    if ($BytesPerSecond -ge 1MB) { return ('{0:N1} MB/s' -f ($BytesPerSecond / 1MB)) }
+    if ($BytesPerSecond -ge 1KB) { return ('{0:N1} KB/s' -f ($BytesPerSecond / 1KB)) }
+    return ('{0:N0} B/s' -f $BytesPerSecond)
+}
+
+function Format-ShortDuration([double]$Seconds) {
+    if ($Seconds -lt 0 -or [double]::IsNaN($Seconds) -or [double]::IsInfinity($Seconds)) { return '--:--' }
+    $span = [TimeSpan]::FromSeconds([Math]::Max(0, $Seconds))
+    if ($span.TotalHours -ge 1) { return ('{0}:{1:00}:{2:00}' -f [int]$span.TotalHours, $span.Minutes, $span.Seconds) }
+    return ('{0:00}:{1:00}' -f $span.Minutes, $span.Seconds)
+}
+
+function Write-ConsoleProgressLine([string]$Activity, [string]$Status, [int]$Percent, [int]$Id, [switch]$Force) {
+    if (-not (Test-ConsoleProgress)) { return }
+
+    $now = Get-Date
+    $state = $script:ProgressRenderState[$Id]
+    if ($null -ne $state -and -not $Force -and (($now - $state.LastRender).TotalMilliseconds -lt 250)) {
+        return
+    }
+
+    $bounded = [Math]::Max(0, [Math]::Min(100, $Percent))
+    $width = 28
+    $filled = [int][Math]::Floor(($bounded / 100) * $width)
+    $empty = $width - $filled
+    $filledText = if ($filled -gt 0) { '#' * $filled } else { '' }
+    $emptyText = if ($empty -gt 0) { '-' * $empty } else { '' }
+    $label = if ($Activity.Length -gt 31) { $Activity.Substring(0, 31) } else { $Activity }
+    $prefix = "`r{0,-31} [" -f $label
+    $suffix = "] {0,3}% {1}" -f $bounded, $Status
+    $plainLength = $prefix.Length + $width + $suffix.Length
+    $lastLength = if ($null -ne $state) { [int]$state.LastLength } else { 0 }
+    $padding = if ($lastLength -gt $plainLength) { ' ' * ($lastLength - $plainLength) } else { '' }
+
+    Write-Host -NoNewline $prefix
+    Write-Host -NoNewline $filledText -ForegroundColor Green
+    Write-Host -NoNewline $emptyText -ForegroundColor DarkGray
+    Write-Host -NoNewline ($suffix + $padding)
+    $script:ProgressRenderState[$Id] = [pscustomobject]@{ LastRender = $now; LastLength = [Math]::Max($plainLength, $lastLength) }
+}
+
 function Write-PackProgress([string]$Activity, [string]$Status, [int]$Percent, [int]$Id = 2) {
-    Write-Progress -Id $Id -Activity $Activity -Status $Status -PercentComplete ([Math]::Max(0, [Math]::Min(100, $Percent)))
+    $bounded = [Math]::Max(0, [Math]::Min(100, $Percent))
+    Write-Progress -Id $Id -Activity $Activity -Status $Status -PercentComplete $bounded
+    Write-ConsoleProgressLine -Activity $Activity -Status $Status -Percent $bounded -Id $Id
 }
 
 function Complete-PackProgress([string]$Activity, [int]$Id = 2) {
     Write-Progress -Id $Id -Activity $Activity -Completed
+    if ($script:ProgressRenderState.ContainsKey($Id)) {
+        Write-ConsoleProgressLine -Activity $Activity -Status 'complete' -Percent 100 -Id $Id -Force
+        Write-Host ''
+        $script:ProgressRenderState.Remove($Id)
+    }
 }
 
 function Ensure-Directory([string]$Path) {
@@ -114,7 +236,7 @@ function Stop-MinecraftProcesses {
         (($_.Name -in @('java.exe', 'javaw.exe')) -and ([string]$_.CommandLine -match 'crazy-craft-4\.0-official|1\.7\.10-Forge10\.13\.4\.1558'))
     })
     if ($targets.Count -eq 0) { return }
-    Write-Host 'Closing Minecraft/Launcher so profile updates are applied...' -ForegroundColor Yellow
+    Write-StatusLine -Kind 'WARN' -Message 'Closing Minecraft/Launcher so profile updates are applied.'
     foreach ($process in $targets) {
         try {
             Stop-Process -Id $process.ProcessId -Force -ErrorAction SilentlyContinue
@@ -174,13 +296,15 @@ function Invoke-DownloadFile {
         Remove-Item -LiteralPath $tempPath -Force
     }
 
-    Write-Host "Downloading $Url"
+    Write-StatusLine -Kind 'INFO' -Message $Activity
+    Write-KeyValue -Name 'URL' -Value $Url
     $request = [System.Net.HttpWebRequest]::Create($Url)
     $request.UserAgent = 'CrazyCraft4PortableInstaller'
     $response = $request.GetResponse()
     try {
         $total = [int64]$response.ContentLength
         $read = [int64]0
+        $started = Get-Date
         $buffer = New-Object byte[] (1024 * 1024)
         $stream = $response.GetResponseStream()
         $file = [System.IO.File]::Open($tempPath, [System.IO.FileMode]::Create, [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
@@ -188,8 +312,15 @@ function Invoke-DownloadFile {
             while (($count = $stream.Read($buffer, 0, $buffer.Length)) -gt 0) {
                 $file.Write($buffer, 0, $count)
                 $read += $count
+                $elapsedSeconds = [Math]::Max(0.001, ((Get-Date) - $started).TotalSeconds)
+                $speed = $read / $elapsedSeconds
                 if ($total -gt 0) {
-                    Write-PackProgress -Activity $Activity -Status ("{0:N1} / {1:N1} MB" -f ($read / 1MB), ($total / 1MB)) -Percent ([int](($read * 100) / $total))
+                    $remainingSeconds = if ($speed -gt 0) { ($total - $read) / $speed } else { -1 }
+                    $status = "{0:N1} / {1:N1} MB | {2} | ETA {3}" -f ($read / 1MB), ($total / 1MB), (Format-ByteRate -BytesPerSecond $speed), (Format-ShortDuration -Seconds $remainingSeconds)
+                    Write-PackProgress -Activity $Activity -Status $status -Percent ([int](($read * 100) / $total))
+                } else {
+                    $status = "{0:N1} MB | {1}" -f ($read / 1MB), (Format-ByteRate -BytesPerSecond $speed)
+                    Write-PackProgress -Activity $Activity -Status $status -Percent 0
                 }
             }
         } finally {
@@ -274,12 +405,16 @@ function Expand-ZipDotNet([string]$ArchivePath, [string]$DestinationPath, [strin
             throw 'No zip entries visible to .NET.'
         }
         $total = [Math]::Max(1, $entries.Count)
+        $started = Get-Date
         for ($i = 0; $i -lt $entries.Count; $i++) {
             $entry = $entries[$i]
             if ([string]::IsNullOrWhiteSpace($entry.FullName)) {
                 continue
             }
-            Write-PackProgress -Activity $Activity -Status $entry.FullName -Percent ([int](($i * 100) / $total))
+            $elapsedSeconds = [Math]::Max(0.001, ((Get-Date) - $started).TotalSeconds)
+            $rate = ($i + 1) / $elapsedSeconds
+            $status = "{0}/{1} files | {2:N1} files/s | {3}" -f ($i + 1), $total, $rate, $entry.FullName
+            Write-PackProgress -Activity $Activity -Status $status -Percent ([int](($i * 100) / $total))
             $target = Join-Path $DestinationPath ($entry.FullName.Replace('/', [IO.Path]::DirectorySeparatorChar))
             if ($entry.FullName.EndsWith('/')) {
                 Ensure-Directory -Path $target
@@ -298,7 +433,7 @@ function Expand-PackArchive([string]$ArchivePath, [string]$DestinationPath, [str
     try {
         Expand-ZipDotNet -ArchivePath $ArchivePath -DestinationPath $DestinationPath -Activity $Activity
     } catch {
-        Write-Warning ".NET zip extraction failed for $(Split-Path -Leaf $ArchivePath): $($_.Exception.Message)"
+        Write-StatusLine -Kind 'WARN' -Message ".NET zip extraction failed for $(Split-Path -Leaf $ArchivePath): $($_.Exception.Message)"
         Write-Step "Extracting with Java jar fallback"
         Ensure-Directory -Path $DestinationPath
         $tools = Get-Jdk8Tools
@@ -331,6 +466,7 @@ function Expand-ClientPayloadSelective([string]$ArchivePath, [string]$Destinatio
     try {
         $entries = @($zip.Entries)
         $total = [Math]::Max(1, $entries.Count)
+        $started = Get-Date
         for ($i = 0; $i -lt $entries.Count; $i++) {
             $entry = $entries[$i]
             if ([string]::IsNullOrWhiteSpace($entry.FullName)) { continue }
@@ -340,7 +476,10 @@ function Expand-ClientPayloadSelective([string]$ArchivePath, [string]$Destinatio
                 continue
             }
 
-            Write-PackProgress -Activity 'Extracting Crazy Craft 4.0 client payload' -Status $entry.FullName -Percent ([int](($i * 100) / $total))
+            $elapsedSeconds = [Math]::Max(0.001, ((Get-Date) - $started).TotalSeconds)
+            $rate = ($i + 1) / $elapsedSeconds
+            $status = "{0}/{1} files | {2:N1} files/s | {3}" -f ($i + 1), $total, $rate, $entry.FullName
+            Write-PackProgress -Activity 'Extracting Crazy Craft 4.0 client payload' -Status $status -Percent ([int](($i * 100) / $total))
             $target = Join-Path $DestinationPath ($normalized.Replace('/', [IO.Path]::DirectorySeparatorChar))
             if ($normalized.EndsWith('/')) {
                 Ensure-Directory -Path $target
@@ -456,7 +595,8 @@ function Verify-PackZip($ZipInfo) {
     if (-not (Test-ExpectedFile -Path $path -Size $ZipInfo.Size -Sha256 $ZipInfo.Sha256)) {
         throw "Cached file is missing or invalid: $path"
     }
-    Write-Host "Verified $($ZipInfo.Name): $($ZipInfo.Sha256)" -ForegroundColor Green
+    Write-StatusLine -Kind 'OK' -Message "Verified $($ZipInfo.Name)."
+    Write-KeyValue -Name 'SHA-256' -Value $ZipInfo.Sha256
 }
 
 function Get-ModJarCount([string]$Path) {
@@ -525,9 +665,7 @@ function Test-AnyRequiredModsPresent([string]$Path) {
 }
 
 function Write-DiagnosticValue([string]$Name, $Value) {
-    $text = [string]$Value
-    if ([string]::IsNullOrWhiteSpace($text)) { $text = '(not found)' }
-    Write-Host ("{0}: {1}" -f $Name, $text)
+    Write-KeyValue -Name $Name -Value $Value
 }
 
 function Get-ObjectPropertyValue($Object, [string]$Name) {
@@ -605,7 +743,7 @@ function Move-ModsToDiagnosticFolder($Batch) {
     Ensure-Directory -Path $disabledRoot
     $matches = @(Get-ModFilesByPatterns -ModsRoot $modsRoot -Patterns ([string[]]$Batch.Mods))
     if ($matches.Count -eq 0) {
-        Write-Host "No active jars matched batch $($Batch.Id): $($Batch.Name)" -ForegroundColor Yellow
+        Write-StatusLine -Kind 'WARN' -Message "No active jars matched batch $($Batch.Id): $($Batch.Name)."
         return 0
     }
 
@@ -619,7 +757,7 @@ function Move-ModsToDiagnosticFolder($Batch) {
             $destination = Join-Path (Split-Path -Parent $destination) ("{0}.{1}{2}" -f [IO.Path]::GetFileNameWithoutExtension($destination), [DateTimeOffset]::UtcNow.ToUnixTimeSeconds(), [IO.Path]::GetExtension($destination))
         }
         Move-Item -LiteralPath $match.FullName -Destination $destination -Force
-        Write-Host "Diagnostic-disabled batch $($Batch.Id): $($match.Name)" -ForegroundColor Yellow
+        Write-StatusLine -Kind 'WARN' -Message "Diagnostic-disabled batch $($Batch.Id): $($match.Name)"
     }
     return $matches.Count
 }
@@ -627,7 +765,7 @@ function Move-ModsToDiagnosticFolder($Batch) {
 function Restore-MenuFpsDiagnosticMods {
     $diagnosticRoot = Join-Path $ClientPath $MenuFpsDiagnosticRootName
     if (-not (Test-Path -LiteralPath $diagnosticRoot)) {
-        Write-Host 'No diagnostic-disabled mods were found to restore.' -ForegroundColor Yellow
+        Write-StatusLine -Kind 'WARN' -Message 'No diagnostic-disabled mods were found to restore.'
         return
     }
     $modsRoot = Join-Path $ClientPath 'mods'
@@ -641,14 +779,15 @@ function Restore-MenuFpsDiagnosticMods {
             $destination = Join-Path $modsRoot $relative
             Ensure-Directory -Path (Split-Path -Parent $destination)
             if (Test-Path -LiteralPath $destination) {
-                Write-Warning "Restore skipped because an active jar already exists: $destination"
+                Write-StatusLine -Kind 'WARN' -Message "Restore skipped because an active jar already exists: $destination"
                 continue
             }
             Move-Item -LiteralPath $jar.FullName -Destination $destination
             $restored++
         }
     }
-    Write-Host "Restored $restored diagnostic-disabled mod jar(s)." -ForegroundColor Green
+    Write-StatusLine -Kind 'OK' -Message "Restored $restored diagnostic-disabled mod jar(s)."
+    Add-Completion "Restored $restored diagnostic-disabled menu FPS mod jar(s)."
 }
 
 function Invoke-MenuFpsSafeMode {
@@ -659,17 +798,19 @@ function Invoke-MenuFpsSafeMode {
     } else {
         $batch = Get-NextMenuFpsBatch
         if ($null -eq $batch) {
-            Write-Host 'No active jars matched any menu FPS diagnostic batch.' -ForegroundColor Yellow
-            Write-Host 'Use -RestoreMenuFpsMods to restore previously disabled diagnostic batches.'
+            Write-StatusLine -Kind 'WARN' -Message 'No active jars matched any menu FPS diagnostic batch.'
+            Write-CommandHint 'powershell -NoProfile -ExecutionPolicy Bypass -File .\Install-Minecraft-Pack.ps1 -RestoreMenuFpsMods'
             return
         }
     }
 
-    Write-Host ("Batch {0}: {1}" -f $batch.Id, $batch.Description)
+    Write-KeyValue -Name 'Batch' -Value ("{0}: {1}" -f $batch.Id, $batch.Description)
     $moved = Move-ModsToDiagnosticFolder -Batch $batch
     Write-Host ''
-    Write-Host "Moved $moved jar(s) into $MenuFpsDiagnosticRootName. Launch the menu and compare FPS before applying another batch." -ForegroundColor Green
-    Write-Host 'To restore all diagnostic-disabled jars, rerun with -RestoreMenuFpsMods.'
+    Write-StatusLine -Kind 'OK' -Message "Moved $moved jar(s) into $MenuFpsDiagnosticRootName."
+    Write-StatusLine -Kind 'INFO' -Message 'Launch the menu and compare FPS before applying another batch.'
+    Write-CommandHint 'powershell -NoProfile -ExecutionPolicy Bypass -File .\Install-Minecraft-Pack.ps1 -RestoreMenuFpsMods'
+    Add-Completion "Applied menu FPS diagnostic batch $($Batch.Id) ($($Batch.Name)); moved $moved jar(s)."
 }
 
 function Get-FirstMatchingLine([string[]]$Lines, [string[]]$Patterns) {
@@ -712,9 +853,21 @@ function Get-TopLogIssues([string[]]$Lines) {
 }
 
 function Get-DiagnosticLogLines([string]$Path) {
+    $item = Get-Item -LiteralPath $Path
+    if ($item.Length -le 20MB) {
+        return @(Get-Content -LiteralPath $Path -ErrorAction SilentlyContinue)
+    }
     $head = @(Get-Content -LiteralPath $Path -TotalCount 5000 -ErrorAction SilentlyContinue)
     $tail = @(Get-Content -LiteralPath $Path -Tail 12000 -ErrorAction SilentlyContinue)
     @($head + $tail)
+}
+
+function Get-DiagnosticLogScanDescription([string]$Path) {
+    $item = Get-Item -LiteralPath $Path
+    if ($item.Length -le 20MB) {
+        return 'entire file'
+    }
+    return 'first 5000 lines plus last 12000 lines'
 }
 
 function Get-LogSearchCandidates {
@@ -778,13 +931,12 @@ function Get-MinecraftProcessInfo {
 function Write-MenuFpsBatchStatus {
     $modsRoot = Join-Path $ClientPath 'mods'
     $diagnosticRoot = Join-Path $ClientPath $MenuFpsDiagnosticRootName
-    Write-Host ''
-    Write-Host 'Menu FPS diagnostic batches:'
+    Write-Rule -Title 'Menu FPS diagnostic batches' -Color 'DarkGray'
     foreach ($batch in $MenuFpsDiagnosticBatches) {
         $activeCount = @(Get-ModFilesByPatterns -ModsRoot $modsRoot -Patterns ([string[]]$batch.Mods)).Count
         $disabledFolder = Join-Path $diagnosticRoot (Get-BatchFolderName -Batch $batch)
         $disabledCount = @(Get-ModJarsUnder -Root $disabledFolder).Count
-        Write-Host ("  {0}. {1}: active={2}, diagnostic-disabled={3}" -f $batch.Id, $batch.Name, $activeCount, $disabledCount)
+        Write-KeyValue -Name ("Batch $($batch.Id)") -Value ("{0} | active={1}, diagnostic-disabled={2}" -f $batch.Name, $activeCount, $disabledCount)
     }
 }
 
@@ -799,7 +951,7 @@ function Diagnose-Client {
         try {
             $profiles = Get-Content -LiteralPath $profilesPath -Raw | ConvertFrom-Json
         } catch {
-            Write-Warning "Could not parse launcher_profiles.json: $($_.Exception.Message)"
+            Write-StatusLine -Kind 'WARN' -Message "Could not parse launcher_profiles.json: $($_.Exception.Message)"
         }
     }
 
@@ -808,7 +960,7 @@ function Diagnose-Client {
         $profileContainer = Get-ObjectPropertyValue -Object $profiles -Name 'profiles'
         $profile = Get-ObjectPropertyValue -Object $profileContainer -Name $ProfileKey
         if ($null -eq $profile) {
-            Write-Host "Launcher profile '$ProfileKey' was not found." -ForegroundColor Yellow
+            Write-StatusLine -Kind 'WARN' -Message "Launcher profile '$ProfileKey' was not found."
         } else {
             Write-DiagnosticValue 'Profile name' (Get-ObjectPropertyValue -Object $profile -Name 'name')
             Write-DiagnosticValue 'Profile gameDir' (Get-ObjectPropertyValue -Object $profile -Name 'gameDir')
@@ -817,7 +969,7 @@ function Diagnose-Client {
             Write-DiagnosticValue 'Profile lastVersionId' (Get-ObjectPropertyValue -Object $profile -Name 'lastVersionId')
         }
     } else {
-        Write-Host 'Launcher profile data was not available.' -ForegroundColor Yellow
+        Write-StatusLine -Kind 'WARN' -Message 'Launcher profile data was not available.'
     }
 
     $running = @(Get-MinecraftProcessInfo)
@@ -837,14 +989,7 @@ function Diagnose-Client {
     }
     Write-DiagnosticValue 'Diagnostic-disabled mod count' $diagnosticDisabled.Count
     $portalGunSoundPath = Join-Path (Join-Path $ClientPath 'mods') ([string]$PortalGunSoundPack.Name)
-    if (Test-PortalGunSoundPack -Path $portalGunSoundPath) {
-        Write-DiagnosticValue 'PortalGun sound pack' 'OK'
-    } elseif (Test-Path -LiteralPath $portalGunSoundPath) {
-        $portalGunSoundItem = Get-Item -LiteralPath $portalGunSoundPath
-        Write-DiagnosticValue 'PortalGun sound pack' ("Invalid ({0} bytes, expected {1})" -f $portalGunSoundItem.Length, $PortalGunSoundPack.Size)
-    } else {
-        Write-DiagnosticValue 'PortalGun sound pack' 'Missing'
-    }
+    Write-DiagnosticValue 'PortalGun sound pack' (Format-PortalGunSoundPackStatus -Status (Get-PortalGunSoundPackStatus -Path $portalGunSoundPath))
 
     $stillActive = @(Get-ModFilesByPatterns -ModsRoot (Join-Path $ClientPath 'mods') -Patterns $ClientFpsDisabledMods)
     if ($stillActive.Count -gt 0) {
@@ -865,7 +1010,7 @@ function Diagnose-Client {
     if (Test-Path -LiteralPath $latestLog) {
         $latestLogItem = Get-Item -LiteralPath $latestLog
         Write-DiagnosticValue 'latest.log size MB' ('{0:N1}' -f ($latestLogItem.Length / 1MB))
-        Write-DiagnosticValue 'latest.log scan window' 'first 5000 lines plus last 12000 lines'
+        Write-DiagnosticValue 'latest.log scan window' (Get-DiagnosticLogScanDescription -Path $latestLog)
         $lines = @(Get-DiagnosticLogLines -Path $latestLog)
         Write-DiagnosticValue 'Log Java line' (Get-FirstMatchingLine -Lines $lines -Patterns @('Java is ', 'Java version', 'java\.version', 'Java VM Version'))
         Write-DiagnosticValue 'Log JVM flags' (Get-FirstMatchingLine -Lines $lines -Patterns @('JVM Flags', 'JVM Arguments', 'java arguments', 'Process arguments'))
@@ -876,9 +1021,9 @@ function Diagnose-Client {
         if ($gaps.Count -eq 0) {
             Write-DiagnosticValue '10s+ log time gaps' 'No'
         } else {
-            Write-Host '10s+ log time gaps:'
+            Write-Rule -Title '10s+ log time gaps' -Color 'DarkGray'
             foreach ($gap in $gaps) {
-                Write-Host ("  {0}s before: {1}" -f $gap.Seconds, $gap.After)
+                Write-KeyValue -Name ("Gap $($gap.Seconds)s") -Value $gap.After
             }
         }
 
@@ -886,30 +1031,31 @@ function Diagnose-Client {
         if ($issues.Count -eq 0) {
             Write-DiagnosticValue 'Repeated WARN/ERROR/Exception lines' 'No'
         } else {
-            Write-Host 'Repeated WARN/ERROR/Exception lines:'
+            Write-Rule -Title 'Repeated WARN/ERROR/Exception lines' -Color 'DarkGray'
             foreach ($issue in $issues) {
-                Write-Host ("  x{0}: {1}" -f $issue.Count, $issue.Name)
+                Write-KeyValue -Name ("x$($issue.Count)") -Value $issue.Name
             }
         }
     } else {
-        Write-Host 'latest.log was not found. Launch the Crazy Craft profile once, then rerun -Diagnose.' -ForegroundColor Yellow
+        Write-StatusLine -Kind 'WARN' -Message 'latest.log was not found. Launch the Crazy Craft profile once, then rerun -Diagnose.'
     }
 
     $eroded = @(Find-ErodedBadlandsMentions)
     if ($eroded.Count -eq 0) {
         Write-DiagnosticValue 'Eroded Badlands in detected logs' 'No'
     } else {
-        Write-Host 'Eroded Badlands in detected logs:'
+        Write-Rule -Title 'Eroded Badlands in detected logs' -Color 'DarkGray'
         foreach ($mention in $eroded) {
-            Write-Host ("  {0}:{1}: {2}" -f $mention.Path, $mention.LineNumber, $mention.Line)
+            Write-KeyValue -Name "$($mention.Path):$($mention.LineNumber)" -Value $mention.Line
         }
     }
 
     Write-MenuFpsBatchStatus
-    Write-Host ''
-    Write-Host 'If menu FPS is still extremely low after the Java/profile pin is visible in latest.log, close Minecraft and run:'
-    Write-Host '  powershell -NoProfile -ExecutionPolicy Bypass -File .\Install-Minecraft-Pack.ps1 -MenuFpsSafeMode'
-    Write-Host 'Rerun that command one batch at a time, testing menu FPS after each batch. Use -RestoreMenuFpsMods to undo diagnostic moves.'
+    Write-Rule -Title 'Next diagnostic step' -Color 'DarkGray'
+    Write-StatusLine -Kind 'INFO' -Message 'If menu FPS is still extremely low after the Java/profile pin is visible in latest.log, close Minecraft and run:'
+    Write-CommandHint 'powershell -NoProfile -ExecutionPolicy Bypass -File .\Install-Minecraft-Pack.ps1 -MenuFpsSafeMode'
+    Write-StatusLine -Kind 'INFO' -Message 'Rerun one batch at a time, testing menu FPS after each batch. Use -RestoreMenuFpsMods to undo diagnostic moves.'
+    Add-Completion 'Diagnostic report completed.'
 }
 
 function Remove-ServerRootFilesFromClient([string]$Path) {
@@ -927,19 +1073,61 @@ function Disable-ClientFpsMods([string]$Path) {
     $disabledRoot = Join-Path $Path 'mods.disabled-client-fps'
     Ensure-Directory -Path $disabledRoot
 
+    $disabledCount = 0
     foreach ($name in $ClientFpsDisabledMods) {
         $matches = @(Get-ChildItem -LiteralPath $modsRoot -Recurse -File -Filter $name -ErrorAction SilentlyContinue)
         foreach ($match in $matches) {
             Move-Item -LiteralPath $match.FullName -Destination (Join-Path $disabledRoot $match.Name) -Force
-            Write-Host "Disabled client FPS mod: $($match.Name)" -ForegroundColor Yellow
+            Write-StatusLine -Kind 'WARN' -Message "Disabled client FPS mod: $($match.Name)"
+            $disabledCount++
         }
+    }
+    if ($disabledCount -gt 0) {
+        Add-Completion "Moved $disabledCount optional client FPS mod jar(s) into mods.disabled-client-fps."
+    } else {
+        Add-Completion 'Optional client FPS mods were already disabled or absent.'
     }
 }
 
+function Get-PortalGunSoundPackStatus([string]$Path) {
+    if (-not (Test-Path -LiteralPath $Path)) {
+        return [pscustomobject]@{ Ok = $false; State = 'Missing'; Detail = 'file not found'; Entries = 0 }
+    }
+
+    $item = Get-Item -LiteralPath $Path
+    if ($item.Length -ne [long]$PortalGunSoundPack.Size) {
+        return [pscustomobject]@{ Ok = $false; State = 'Invalid'; Detail = "$($item.Length) bytes, expected $($PortalGunSoundPack.Size)"; Entries = 0 }
+    }
+
+    $md5 = Get-FileHashString -Path $Path -Algorithm MD5
+    if ($md5 -ne ([string]$PortalGunSoundPack.Md5).ToLowerInvariant()) {
+        return [pscustomobject]@{ Ok = $false; State = 'Invalid'; Detail = "MD5 $md5, expected $($PortalGunSoundPack.Md5)"; Entries = 0 }
+    }
+
+    try {
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        $zip = [System.IO.Compression.ZipFile]::OpenRead($Path)
+        try {
+            if ($zip.Entries.Count -lt 1) {
+                return [pscustomobject]@{ Ok = $false; State = 'Invalid'; Detail = 'resource archive has no entries'; Entries = 0 }
+            }
+            return [pscustomobject]@{ Ok = $true; State = 'OK'; Detail = "$($item.Length) bytes, MD5 $md5, $($zip.Entries.Count) archive entries"; Entries = $zip.Entries.Count }
+        } finally {
+            $zip.Dispose()
+        }
+    } catch {
+        return [pscustomobject]@{ Ok = $false; State = 'Invalid'; Detail = "resource archive could not be opened: $($_.Exception.Message)"; Entries = 0 }
+    }
+}
+
+function Format-PortalGunSoundPackStatus($Status) {
+    if ($null -eq $Status) { return 'unknown' }
+    "$($Status.State) ($($Status.Detail))"
+}
+
 function Test-PortalGunSoundPack([string]$Path) {
-    if (-not (Test-Path -LiteralPath $Path)) { return $false }
-    if ((Get-Item -LiteralPath $Path).Length -ne [long]$PortalGunSoundPack.Size) { return $false }
-    return (Get-FileHashString -Path $Path -Algorithm MD5) -eq ([string]$PortalGunSoundPack.Md5).ToLowerInvariant()
+    $status = Get-PortalGunSoundPackStatus -Path $Path
+    return [bool]$status.Ok
 }
 
 function Move-BrokenDownloadFile([string]$Path, [string]$Reason) {
@@ -950,36 +1138,45 @@ function Move-BrokenDownloadFile([string]$Path, [string]$Reason) {
     Ensure-Directory -Path $disabledRoot
     $destination = Join-Path $disabledRoot ("{0}.{1}" -f (Split-Path -Leaf $Path), [DateTimeOffset]::UtcNow.ToUnixTimeSeconds())
     Move-Item -LiteralPath $Path -Destination $destination -Force
-    Write-Host "Quarantined broken download: $(Split-Path -Leaf $Path) ($Reason)" -ForegroundColor Yellow
+    Write-StatusLine -Kind 'WARN' -Message "Quarantined broken download: $(Split-Path -Leaf $Path) ($Reason)"
 }
 
 function Ensure-PortalGunSoundPack([string]$Path) {
     $modsRoot = Join-Path $Path 'mods'
     $portalGunJar = Join-Path $modsRoot 'PortalGunbeta.jar'
-    if (-not (Test-Path -LiteralPath $portalGunJar)) { return }
+    if (-not (Test-Path -LiteralPath $portalGunJar)) {
+        Add-Completion 'PortalGun sound resource check skipped because PortalGunbeta.jar is not active.'
+        return
+    }
 
     $soundPath = Join-Path $modsRoot ([string]$PortalGunSoundPack.Name)
     $md5Path = "$soundPath.md5"
-    if (Test-PortalGunSoundPack -Path $soundPath) {
+    $beforeStatus = Get-PortalGunSoundPackStatus -Path $soundPath
+    if ($beforeStatus.Ok) {
         [System.IO.File]::WriteAllText($md5Path, [string]$PortalGunSoundPack.Md5, [System.Text.Encoding]::ASCII)
+        Add-Completion "PortalGun sound pack already verified: $(Format-PortalGunSoundPackStatus -Status $beforeStatus)."
         return
     }
 
     Write-Step 'Repairing PortalGun sound resource'
+    Write-StatusLine -Kind 'WARN' -Message "PortalGun sound pack before repair: $(Format-PortalGunSoundPackStatus -Status $beforeStatus)"
     Move-BrokenDownloadFile -Path $soundPath -Reason 'invalid PortalGun sound pack'
     Move-BrokenDownloadFile -Path $md5Path -Reason 'invalid PortalGun sound checksum'
     try {
         Invoke-DownloadFile -Url ([string]$PortalGunSoundPack.Url) -DestinationPath $soundPath -ExpectedSize ([long]$PortalGunSoundPack.Size) -Activity 'Downloading PortalGun sound pack'
-        if (-not (Test-PortalGunSoundPack -Path $soundPath)) {
-            throw "Downloaded PortalGun sound pack failed MD5 validation. Expected $($PortalGunSoundPack.Md5), got $(Get-FileHashString -Path $soundPath -Algorithm MD5)."
+        $afterStatus = Get-PortalGunSoundPackStatus -Path $soundPath
+        if (-not $afterStatus.Ok) {
+            throw "Downloaded PortalGun sound pack did not verify: $(Format-PortalGunSoundPackStatus -Status $afterStatus)."
         }
         [System.IO.File]::WriteAllText($md5Path, [string]$PortalGunSoundPack.Md5, [System.Text.Encoding]::ASCII)
-        Write-Host 'PortalGun sound pack repaired.' -ForegroundColor Green
+        Write-StatusLine -Kind 'OK' -Message "PortalGun sound pack after repair: $(Format-PortalGunSoundPackStatus -Status $afterStatus)"
+        Add-Completion "PortalGun sound pack repaired and verified: $(Format-PortalGunSoundPackStatus -Status $afterStatus)."
     } catch {
-        Write-Warning "PortalGun sound repair failed: $($_.Exception.Message)"
+        Write-StatusLine -Kind 'FAIL' -Message "PortalGun sound repair failed: $($_.Exception.Message)"
         Move-BrokenDownloadFile -Path $soundPath -Reason 'failed PortalGun sound repair'
         Set-TextReplacement -Path (Join-Path $Path 'config\PortalGun.cfg') -Pattern '^\s*I:enableSounds=1\s*$' -Replacement '        I:enableSounds=0'
-        Write-Warning 'PortalGun sounds were disabled in config to avoid repeated bad runtime downloads.'
+        Add-Completion 'PortalGun sound repair failed; PortalGun sounds were disabled in config for safety.'
+        throw 'PortalGun sound pack repair did not verify, so the installer stopped before continuing.'
     }
 }
 
@@ -1082,24 +1279,34 @@ function Install-Client {
     $modsAlreadyPresent = Test-RequiredModsPresent -Path $ClientPath
     $someRequiredModsPresent = Test-AnyRequiredModsPresent -Path $ClientPath
     if ($modsAlreadyPresent) {
-        Write-Host "Required Crazy Craft mods already exist in $ClientPath\mods; skipping payload download." -ForegroundColor Green
+        Write-StatusLine -Kind 'OK' -Message 'Required Crazy Craft mods already exist; skipping large payload download.'
+        Write-KeyValue -Name 'Client path' -Value $ClientPath
+        Add-Completion 'Required Crazy Craft mods are already present; large client payload download skipped.'
     } else {
         Ensure-PackZip $ClientZip | Out-Null
+        Add-Completion 'Crazy Craft client payload is available in the local cache.'
     }
     Ensure-ForgeInstaller | Out-Null
+    Add-Completion 'Forge 1.7.10 installer is available in the local cache.'
     if ($VerifyOnly) {
         if ($modsAlreadyPresent) {
-            Write-Host "Verified existing mods folder: all required Crazy Craft mods are present." -ForegroundColor Green
+            Write-StatusLine -Kind 'OK' -Message 'Verified existing mods folder: all required Crazy Craft mods are present.'
+            Add-Completion 'Verify-only completed: all required client mods are present.'
         } else {
             Verify-PackZip $ClientZip
+            Add-Completion 'Verify-only completed: cached client payload hash is valid.'
         }
         return
     }
-    if ($DownloadOnly) { return }
+    if ($DownloadOnly) {
+        Add-Completion 'Download-only completed; no client files were staged.'
+        return
+    }
 
     Write-Step 'Staging Crazy Craft 4.0 client'
     if ($modsAlreadyPresent) {
         Remove-ServerRootFilesFromClient -Path $ClientPath
+        Add-Completion 'Removed server-only root files from the existing client folder when present.'
     } else {
         if ($Force -and -not $someRequiredModsPresent) {
             Remove-DirectoryIfPresent -Path $ClientPath
@@ -1113,6 +1320,7 @@ function Install-Client {
         }
         Expand-ClientPayloadSelective -ArchivePath (Get-PackZipPath $ClientZip) -DestinationPath $ClientPath
         Remove-ServerRootFilesFromClient -Path $ClientPath
+        Add-Completion 'Client payload staged and server-only root files removed.'
     }
     <#
     If all required mod jars are already present, do not refresh configs from the
@@ -1123,26 +1331,38 @@ function Install-Client {
     if ($modCount -lt 60) {
         throw "Client staging failed; expected Crazy Craft mod files, found only $modCount mod jar(s)."
     }
+    Add-Completion "Client mod count verified: $modCount active jar(s)."
     Ensure-PortalGunSoundPack -Path $ClientPath
     Apply-ClientPerformanceDefaults -Path $ClientPath
+    Add-Completion 'Low-FPS client options and config defaults applied.'
     Disable-ClientFpsMods -Path $ClientPath
     Ensure-MinecraftBaseMetadata
+    Add-Completion 'Minecraft 1.7.10 base metadata is available.'
     Install-ForgeClient
+    Add-Completion 'Forge 10.13.4.1558 client metadata is installed.'
     Update-LauncherProfile
-    Write-Host ''
-    Write-Host "Client ready: $ClientPath" -ForegroundColor Green
-    Write-Host "Launch the '$PackName' profile. If menu FPS is still extremely low, close Minecraft and rerun this installer with -Diagnose." -ForegroundColor Cyan
+    Add-Completion "Minecraft Launcher profile '$PackName' updated and pinned to portable Java 8."
+    Write-Rule -Title 'Client ready' -Color 'Green'
+    Write-KeyValue -Name 'Client path' -Value $ClientPath
+    Write-StatusLine -Kind 'OK' -Message "Launch the '$PackName' profile."
+    Write-StatusLine -Kind 'INFO' -Message 'If menu FPS is still extremely low, close Minecraft and rerun diagnostics.'
+    Write-CommandHint 'powershell -NoProfile -ExecutionPolicy Bypass -File .\Install-Minecraft-Pack.ps1 -Diagnose'
 }
 
 function Install-Server {
     if ([string]::IsNullOrWhiteSpace($ServerPath)) { throw 'Server mode requires -ServerPath.' }
     Ensure-Directory -Path $CacheRoot
     Ensure-PackZip $ServerZip | Out-Null
+    Add-Completion 'Crazy Craft server payload is available in the local cache.'
     if ($VerifyOnly) {
         Verify-PackZip $ServerZip
+        Add-Completion 'Verify-only completed: cached server payload hash is valid.'
         return
     }
-    if ($DownloadOnly) { return }
+    if ($DownloadOnly) {
+        Add-Completion 'Download-only completed; no server files were staged.'
+        return
+    }
 
     Write-Step 'Staging Crazy Craft 4.0 server'
     if ($Force) { Remove-DirectoryIfPresent -Path $ServerPath }
@@ -1152,27 +1372,33 @@ function Install-Server {
     }
     Expand-PackArchive -ArchivePath (Get-PackZipPath $ServerZip) -DestinationPath $ServerPath -Activity 'Extracting Crazy Craft 4.0 server'
     Write-Host 'eula=true' | Set-Content -LiteralPath (Join-Path $ServerPath 'eula.txt') -Encoding ASCII
-    Write-Host ''
-    Write-Host "Server payload ready: $ServerPath" -ForegroundColor Green
+    Add-Completion "Server payload staged at $ServerPath."
+    Add-Completion 'Server eula.txt written with eula=true.'
+    Write-Rule -Title 'Server payload ready' -Color 'Green'
+    Write-KeyValue -Name 'Server path' -Value $ServerPath
 }
 
-Write-Host "$PackName downloader"
-Write-Host "Minecraft: 1.7.10"
-Write-Host "Forge: 10.13.4.1558 ($ForgeVersionId)"
-Write-Host "Pack root: $PackRoot"
-if ($Client -and $Server) {
-    throw 'Choose either -Client or -Server, not both.'
-}
-if ($Diagnose) {
-    Diagnose-Client
-} elseif ($RestoreMenuFpsMods) {
-    Restore-MenuFpsDiagnosticMods
-    Diagnose-Client
-} elseif ($MenuFpsSafeMode) {
-    Invoke-MenuFpsSafeMode
-    Diagnose-Client
-} elseif ($Server) {
-    Install-Server
-} else {
-    Install-Client
+Write-InstallerHeader
+try {
+    if ($Client -and $Server) {
+        throw 'Choose either -Client or -Server, not both.'
+    }
+    if ($Diagnose) {
+        Diagnose-Client
+    } elseif ($RestoreMenuFpsMods) {
+        Restore-MenuFpsDiagnosticMods
+        Diagnose-Client
+    } elseif ($MenuFpsSafeMode) {
+        Invoke-MenuFpsSafeMode
+        Diagnose-Client
+    } elseif ($Server) {
+        Install-Server
+    } else {
+        Install-Client
+    }
+} catch {
+    $script:FailureSummary = $_.Exception.Message
+    throw
+} finally {
+    Write-CompletionSummary
 }

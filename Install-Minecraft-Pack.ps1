@@ -20,6 +20,27 @@ $ErrorActionPreference = 'Stop'
 $PackRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRawBase = 'https://raw.githubusercontent.com/Chicken3veryDay/minecraft-1.16.5-forge-pack/main'
 
+function Write-Rule([string]$Title = '', [string]$Color = 'DarkCyan') {
+    $line = '=' * 72
+    Write-Host ''
+    Write-Host $line -ForegroundColor $Color
+    if (-not [string]::IsNullOrWhiteSpace($Title)) {
+        Write-Host $Title -ForegroundColor Cyan
+        Write-Host $line -ForegroundColor $Color
+    }
+}
+
+function Write-StatusLine([string]$Kind, [string]$Message) {
+    switch ($Kind.ToUpperInvariant()) {
+        'OK' { $label = '[OK]  '; $color = 'Green' }
+        'WARN' { $label = '[WARN]'; $color = 'Yellow' }
+        'RUN' { $label = '[RUN] '; $color = 'Magenta' }
+        default { $label = '[INFO]'; $color = 'Cyan' }
+    }
+    Write-Host $label -NoNewline -ForegroundColor $color
+    Write-Host " $Message"
+}
+
 function Get-ForwardArgs([switch]$IncludeSkipSelfUpdate) {
     $forward = @()
     if ($Client) { $forward += '-Client' }
@@ -59,15 +80,13 @@ function Test-InteractiveHost {
 }
 
 function Select-InstallMode {
-    Write-Host ''
-    Write-Host 'Crazy Craft 4.0 Official installer' -ForegroundColor Cyan
-    Write-Host ''
-    Write-Host '1. Client install (recommended)'
-    Write-Host '   Downloads/stages the Crazy Craft client payload when required, installs Forge 1.7.10, pins Java 8, and creates the launcher profile.'
-    Write-Host '2. Server staging'
-    Write-Host '   Downloads/stages the official CrazyCraft4Server.zip into a server folder. This does not update your client launcher profile.'
-    Write-Host '3. Verify/diagnose existing client install'
-    Write-Host '   No large pack download. Prints profile/runtime/log/mod diagnostics for the current client folder.'
+    Write-Rule -Title 'Crazy Craft 4.0 Official installer'
+    Write-StatusLine -Kind 'OK' -Message '1. Client install (recommended)'
+    Write-Host '      Downloads/stages the client payload when required, installs Forge 1.7.10, pins Java 8, and creates the launcher profile.'
+    Write-StatusLine -Kind 'INFO' -Message '2. Server staging'
+    Write-Host '      Downloads/stages the official CrazyCraft4Server.zip into a server folder. This does not update the client launcher profile.'
+    Write-StatusLine -Kind 'INFO' -Message '3. Verify/diagnose existing client install'
+    Write-Host '      No large pack download. Prints profile/runtime/log/mod diagnostics for the current client folder.'
     Write-Host ''
     while ($true) {
         $choice = Read-Host 'Choose 1, 2, or 3 [1]'
@@ -88,7 +107,7 @@ function Select-InstallMode {
                 return
             }
             '3' { $script:Diagnose = $true; return }
-            default { Write-Host 'Please enter 1, 2, or 3.' -ForegroundColor Yellow }
+            default { Write-StatusLine -Kind 'WARN' -Message 'Please enter 1, 2, or 3.' }
         }
     }
 }
@@ -96,6 +115,7 @@ function Select-InstallMode {
 function Invoke-SelfUpdate {
     $files = @(
         'Install-Minecraft-Pack.ps1',
+        'Install-Minecraft-Pack.bat',
         'tools/Install-CrazyCraft4.ps1',
         'pack-sources/CrazyCraft4/mods.required.txt'
     )
@@ -121,12 +141,12 @@ function Invoke-SelfUpdate {
                 New-Item -ItemType Directory -Path (Split-Path -Parent $local) -Force | Out-Null
                 Copy-Item -LiteralPath $temp -Destination $local -Force
                 $updated = $true
-                Write-Host "Updated $relative" -ForegroundColor Cyan
+                Write-StatusLine -Kind 'OK' -Message "Updated $relative"
             }
         }
     }
     catch {
-        Write-Warning "Auto-update skipped: $($_.Exception.Message)"
+        Write-StatusLine -Kind 'WARN' -Message "Auto-update skipped: $($_.Exception.Message)"
         return $false
     }
     finally {
@@ -136,9 +156,10 @@ function Invoke-SelfUpdate {
 }
 
 if (-not $SkipSelfUpdate) {
-    Write-Host 'Checking for installer updates...'
+    Write-Rule -Title 'Self update'
+    Write-StatusLine -Kind 'INFO' -Message 'Checking for installer updates...'
     if (Invoke-SelfUpdate) {
-        Write-Host 'Installer updated. Relaunching updated installer...' -ForegroundColor Green
+        Write-StatusLine -Kind 'OK' -Message 'Installer updated. Relaunching updated installer...'
         $relaunchArgs = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $MyInvocation.MyCommand.Path) + (Get-ForwardArgs -IncludeSkipSelfUpdate)
         & powershell.exe @relaunchArgs
         exit $LASTEXITCODE

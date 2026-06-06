@@ -5,10 +5,15 @@ cd /d "%~dp0"
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0Install-Minecraft-Pack.ps1" %*
 set EXITCODE=%ERRORLEVEL%
 
-if not "%EXITCODE%"=="0" (
-  echo.
+echo.
+echo ========================================================================
+if "%EXITCODE%"=="0" (
+  echo Installer finished successfully.
+) else (
   echo Installer failed with exit code %EXITCODE%.
-  pause
 )
+echo ========================================================================
+echo Review the summary above, then press any key to close this window.
+pause >nul
 
 exit /b %EXITCODE%
