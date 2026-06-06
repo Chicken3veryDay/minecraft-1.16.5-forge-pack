@@ -67,6 +67,14 @@ $PortalGunSoundPack = @{
     Size = 14885449
     Md5 = '12d76a36e95288b9e2ee9146f2e20ecd'
 }
+$NotEnoughItemsClientMod = @{
+    Name = 'NotEnoughItems-1.7.10-1.0.5.120-universal.jar'
+    Url = 'https://cdn.modrinth.com/data/TmYVaklx/versions/4ZISyGrt/NotEnoughItems-1.7.10-1.0.5.120-universal.jar'
+    Size = 513136
+    Sha256 = '3ebbc2f82b61812aa158375005a47da4d450bec870860fcbf015a64de74cde1c'
+    TargetSubdir = 'mods\1.7.10'
+    TriggerMods = @('hbmBETA.jar', 'NEIAddons*.jar', 'neiIntegration*.jar', 'NEIIntegration*.jar')
+}
 $ForgeInstallerUrl = 'https://maven.minecraftforge.net/net/minecraftforge/forge/1.7.10-10.13.4.1558-1.7.10/forge-1.7.10-10.13.4.1558-1.7.10-installer.jar'
 $ForgeUniversalUrl = 'https://maven.minecraftforge.net/net/minecraftforge/forge/1.7.10-10.13.4.1558-1.7.10/forge-1.7.10-10.13.4.1558-1.7.10-universal.jar'
 $ClientZip = @{
@@ -990,6 +998,8 @@ function Diagnose-Client {
     Write-DiagnosticValue 'Diagnostic-disabled mod count' $diagnosticDisabled.Count
     $portalGunSoundPath = Join-Path (Join-Path $ClientPath 'mods') ([string]$PortalGunSoundPack.Name)
     Write-DiagnosticValue 'PortalGun sound pack' (Format-PortalGunSoundPackStatus -Status (Get-PortalGunSoundPackStatus -Path $portalGunSoundPath))
+    $notEnoughItemsStatus = Get-NotEnoughItemsStatus -Path $ClientPath
+    Write-DiagnosticValue 'NotEnoughItems dependency' (Format-NotEnoughItemsStatus -Status $notEnoughItemsStatus)
 
     $stillActive = @(Get-ModFilesByPatterns -ModsRoot (Join-Path $ClientPath 'mods') -Patterns $ClientFpsDisabledMods)
     if ($stillActive.Count -gt 0) {
@@ -1016,6 +1026,14 @@ function Diagnose-Client {
         Write-DiagnosticValue 'Log JVM flags' (Get-FirstMatchingLine -Lines $lines -Patterns @('JVM Flags', 'JVM Arguments', 'java arguments', 'Process arguments'))
         Write-DiagnosticValue 'Log GL renderer' (Get-FirstMatchingLine -Lines $lines -Patterns @('OpenGL:', 'GL info', 'OpenGL version', 'LWJGL'))
         Write-DiagnosticValue 'Log mod-load line' (Get-FirstMatchingLine -Lines $lines -Patterns @('Forge Mod Loader has identified', 'mods loaded', 'Loaded mods', 'Mod state'))
+        $neiMissingClassHits = @($lines | Where-Object { $_ -match 'codechicken[./\\]nei[./\\]recipe[./\\]TemplateRecipeHandler|codechicken\.nei\.recipe\.TemplateRecipeHandler' }).Count
+        if ($neiMissingClassHits -gt 0) {
+            $neiHint = if ($notEnoughItemsStatus.Verified) { 'old log still contains pre-repair hits; relaunch Minecraft to confirm cleared' } else { 'rerun client install to repair NotEnoughItems' }
+            Write-DiagnosticValue 'NEI missing-class log hits' "$neiMissingClassHits ($neiHint)"
+        } else {
+            Write-DiagnosticValue 'NEI missing-class log hits' 'No'
+        }
+        Write-DiagnosticValue 'Join client-thread timeout' (Get-FirstMatchingLine -Lines $lines -Patterns @('Timeout waiting for client thread to catch up', 'FMLClientHandler\.waitForPlayClient'))
 
         $gaps = @(Get-LogTimeGaps -Lines $lines -ThresholdSeconds 10)
         if ($gaps.Count -eq 0) {
@@ -1130,11 +1148,23 @@ function Test-PortalGunSoundPack([string]$Path) {
     return [bool]$status.Ok
 }
 
+function Get-BrokenDownloadRootForFile([string]$Path) {
+    try {
+        $clientFull = ([System.IO.Path]::GetFullPath($ClientPath)).TrimEnd([char[]]@([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar))
+        $fileFull = [System.IO.Path]::GetFullPath($Path)
+        if ($fileFull.StartsWith($clientFull + [IO.Path]::DirectorySeparatorChar, [System.StringComparison]::OrdinalIgnoreCase) -or
+            $fileFull.StartsWith($clientFull + [IO.Path]::AltDirectorySeparatorChar, [System.StringComparison]::OrdinalIgnoreCase)) {
+            return (Join-Path $clientFull $BrokenDownloadDisabledRootName)
+        }
+    } catch {
+    }
+    $disabledRoot = Join-Path (Split-Path -Parent $Path) '..'
+    [System.IO.Path]::GetFullPath((Join-Path $disabledRoot $BrokenDownloadDisabledRootName))
+}
+
 function Move-BrokenDownloadFile([string]$Path, [string]$Reason) {
     if (-not (Test-Path -LiteralPath $Path)) { return }
-    $disabledRoot = Join-Path (Split-Path -Parent $Path) '..'
-    $disabledRoot = Join-Path $disabledRoot $BrokenDownloadDisabledRootName
-    $disabledRoot = [System.IO.Path]::GetFullPath($disabledRoot)
+    $disabledRoot = Get-BrokenDownloadRootForFile -Path $Path
     Ensure-Directory -Path $disabledRoot
     $destination = Join-Path $disabledRoot ("{0}.{1}" -f (Split-Path -Leaf $Path), [DateTimeOffset]::UtcNow.ToUnixTimeSeconds())
     Move-Item -LiteralPath $Path -Destination $destination -Force
@@ -1178,6 +1208,80 @@ function Ensure-PortalGunSoundPack([string]$Path) {
         Add-Completion 'PortalGun sound repair failed; PortalGun sounds were disabled in config for safety.'
         throw 'PortalGun sound pack repair did not verify, so the installer stopped before continuing.'
     }
+}
+
+function Get-NotEnoughItemsTargetPath([string]$Path) {
+    Join-Path (Join-Path $Path ([string]$NotEnoughItemsClientMod.TargetSubdir)) ([string]$NotEnoughItemsClientMod.Name)
+}
+
+function Get-NotEnoughItemsFiles([string]$Path) {
+    Get-ModFilesByPatterns -ModsRoot (Join-Path $Path 'mods') -Patterns @('NotEnoughItems*.jar')
+}
+
+function Get-NotEnoughItemsStatus([string]$Path) {
+    $targetPath = Get-NotEnoughItemsTargetPath -Path $Path
+    if (Test-ExpectedFile -Path $targetPath -Size ([long]$NotEnoughItemsClientMod.Size) -Sha256 ([string]$NotEnoughItemsClientMod.Sha256)) {
+        return [pscustomobject]@{ Verified = $true; State = 'OK'; Detail = "$([IO.Path]::GetFileName($targetPath)), $([long]$NotEnoughItemsClientMod.Size) bytes, SHA-256 $($NotEnoughItemsClientMod.Sha256)"; Path = $targetPath }
+    }
+
+    $files = @(Get-NotEnoughItemsFiles -Path $Path)
+    foreach ($file in $files) {
+        if (Test-ExpectedFile -Path $file.FullName -Size ([long]$NotEnoughItemsClientMod.Size) -Sha256 ([string]$NotEnoughItemsClientMod.Sha256)) {
+            return [pscustomobject]@{ Verified = $true; State = 'OK'; Detail = "$($file.Name), $($file.Length) bytes, SHA-256 $($NotEnoughItemsClientMod.Sha256)"; Path = $file.FullName }
+        }
+    }
+
+    if (Test-Path -LiteralPath $targetPath) {
+        $item = Get-Item -LiteralPath $targetPath
+        return [pscustomobject]@{ Verified = $false; State = 'Invalid'; Detail = "$($item.Name), $($item.Length) bytes, expected $($NotEnoughItemsClientMod.Size) bytes"; Path = $targetPath }
+    }
+    if ($files.Count -gt 0) {
+        return [pscustomobject]@{ Verified = $false; State = 'PresentUnverified'; Detail = (($files | Select-Object -ExpandProperty Name | Sort-Object) -join ', '); Path = $files[0].FullName }
+    }
+    [pscustomobject]@{ Verified = $false; State = 'Missing'; Detail = 'no active NotEnoughItems jar found'; Path = $targetPath }
+}
+
+function Format-NotEnoughItemsStatus($Status) {
+    if ($null -eq $Status) { return 'unknown' }
+    "$($Status.State) ($($Status.Detail))"
+}
+
+function Test-NotEnoughItemsRepairNeeded([string]$Path) {
+    $modsRoot = Join-Path $Path 'mods'
+    if (-not (Test-Path -LiteralPath $modsRoot)) { return $false }
+    $triggers = @(Get-ModFilesByPatterns -ModsRoot $modsRoot -Patterns ([string[]]$NotEnoughItemsClientMod.TriggerMods))
+    return ($triggers.Count -gt 0)
+}
+
+function Ensure-NotEnoughItemsClientMod([string]$Path) {
+    if (-not (Test-NotEnoughItemsRepairNeeded -Path $Path)) {
+        Add-Completion 'NotEnoughItems client dependency check skipped because no known NEI-dependent active mods were found.'
+        return
+    }
+
+    $beforeStatus = Get-NotEnoughItemsStatus -Path $Path
+    if ($beforeStatus.Verified) {
+        Add-Completion "NotEnoughItems client dependency already verified: $(Format-NotEnoughItemsStatus -Status $beforeStatus)."
+        return
+    }
+    if ($beforeStatus.State -eq 'PresentUnverified') {
+        Write-StatusLine -Kind 'WARN' -Message "NotEnoughItems is active but not installer-verified: $($beforeStatus.Detail)"
+        Add-Completion "NotEnoughItems client dependency was already present but not installer-verified: $($beforeStatus.Detail)."
+        return
+    }
+
+    Write-Step 'Repairing NotEnoughItems client dependency'
+    Write-StatusLine -Kind 'WARN' -Message "NotEnoughItems before repair: $(Format-NotEnoughItemsStatus -Status $beforeStatus)"
+    $targetPath = Get-NotEnoughItemsTargetPath -Path $Path
+    Move-BrokenDownloadFile -Path $targetPath -Reason 'invalid NotEnoughItems client dependency'
+    Invoke-DownloadFile -Url ([string]$NotEnoughItemsClientMod.Url) -DestinationPath $targetPath -ExpectedSize ([long]$NotEnoughItemsClientMod.Size) -Sha256 ([string]$NotEnoughItemsClientMod.Sha256) -Activity 'Downloading NotEnoughItems client dependency'
+
+    $afterStatus = Get-NotEnoughItemsStatus -Path $Path
+    if (-not $afterStatus.Verified) {
+        throw "NotEnoughItems client dependency did not verify after repair: $(Format-NotEnoughItemsStatus -Status $afterStatus)."
+    }
+    Write-StatusLine -Kind 'OK' -Message "NotEnoughItems after repair: $(Format-NotEnoughItemsStatus -Status $afterStatus)"
+    Add-Completion "NotEnoughItems client dependency repaired and verified: $(Format-NotEnoughItemsStatus -Status $afterStatus)."
 }
 
 function Set-TextReplacement([string]$Path, [string]$Pattern, [string]$Replacement) {
@@ -1333,6 +1437,7 @@ function Install-Client {
     }
     Add-Completion "Client mod count verified: $modCount active jar(s)."
     Ensure-PortalGunSoundPack -Path $ClientPath
+    Ensure-NotEnoughItemsClientMod -Path $ClientPath
     Apply-ClientPerformanceDefaults -Path $ClientPath
     Add-Completion 'Low-FPS client options and config defaults applied.'
     Disable-ClientFpsMods -Path $ClientPath
