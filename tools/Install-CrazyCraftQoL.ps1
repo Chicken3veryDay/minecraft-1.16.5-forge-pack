@@ -17,6 +17,7 @@ $CacheRoot = Join-Path $PackRoot '_InstallCache\crazy-craft-4.0\qol-mods'
 
 $Mods = @(
     @{ Name='VeinMiner'; Side='both'; Patterns=@('VeinMiner*.jar','veinminer*.jar'); Slugs=@('veinminer'); Notes='Configure for ores/logs only; keep stone/dirt/netherrack disabled.' },
+    @{ Name='OreExcavation'; Side='both'; Patterns=@('OreExcavation*.jar','oreexcavation*.jar','Ore-Excavation*.jar'); Slugs=@('ore-excavation','oreexcavation'); Notes='VeinMiner alternative. Install only if jar metadata/filename proves Minecraft 1.7.10.' },
     @{ Name='Mouse Tweaks'; Side='client'; Patterns=@('MouseTweaks*.jar','Mouse-Tweaks*.jar','mousetweaks*.jar'); Slugs=@('mouse-tweaks','mousetweaks'); Notes='Client-only inventory controls.' },
     @{ Name='Fast Leaf Decay'; Side='both'; Patterns=@('FastLeafDecay*.jar','fastleafdecay*.jar','Fast-Leaf-Decay*.jar'); Slugs=@('fast-leaf-decay','fastleafdecay'); Notes='Faster leaf cleanup after tree chopping.' },
     @{ Name='LunatriusCore'; Side='server'; Patterns=@('LunatriusCore*.jar','lunatriuscore*.jar'); Slugs=@('lunatriuscore'); Notes='Required dependency for AromaBackup on Minecraft 1.7.10.' },
@@ -65,7 +66,7 @@ function Get-JarMetadataText([string]$Path) {
         $zip = [System.IO.Compression.ZipFile]::OpenRead($Path)
         try {
             foreach ($entry in $zip.Entries) {
-                if ($entry.FullName -match '(^|/)(mcmod\.info|mods\.toml|META-INF/mods\.toml|fabric\.mod\.json|version\.json)$') {
+                if ($entry.FullName -match '(^|/)(mcmod\.info|mods\.toml|META-INF/mods\.toml|fabric\.mod\.json|version\.json|META-INF/MANIFEST\.MF)$') {
                     $reader = New-Object IO.StreamReader($entry.Open())
                     try { $texts += $reader.ReadToEnd() } finally { $reader.Dispose() }
                 }
@@ -84,21 +85,29 @@ function Test-Legacy1710Jar($Mod, [string]$JarPath) {
         return $false
     }
 
-    if ($lower -match '(fabric|quilt|neoforge)' -or $lower -match '(mc|minecraft)?1\.(8|9|10|11|12|13|14|15|16|17|18|19|20|21)') {
-        Write-StatusLine -Kind 'WARN' -Message "Rejected $($Mod.Name): not Minecraft 1.7.10: $name"
+    if ($lower -match '(fabric|quilt|neoforge)') {
+        Write-StatusLine -Kind 'WARN' -Message "Rejected $($Mod.Name): wrong loader: $name"
+        return $false
+    }
+
+    # Accept explicit 1.7.10 filenames before any wrong-version test. Prevents false hits against mod versions.
+    if ($lower -match '1\.7\.10' -or $lower -match 'mc1\.7\.10') { return $true }
+
+    # Reject only explicit Minecraft/loader version labels, not arbitrary mod versions like OreExcavation-1.1.134.jar.
+    if ($lower -match '(mc|minecraft|forge)[-_\. ]?1\.(8|9|10|11|12|13|14|15|16|17|18|19|20|21)(?!\d)') {
+        Write-StatusLine -Kind 'WARN' -Message "Rejected $($Mod.Name): explicit wrong Minecraft version: $name"
         return $false
     }
 
     switch ($Mod.Name) {
         'BetterFps' {
-            if ($lower -eq 'betterfps-1.0.1.jar' -or $lower -match '1\.7\.10') { return $true }
+            if ($lower -eq 'betterfps-1.0.1.jar') { return $true }
             Write-StatusLine -Kind 'WARN' -Message "Rejected BetterFps until proven 1.7.10: $name"
             return $false
         }
         default {
-            if ($lower -match '1\.7\.10' -or $lower -match 'mc1\.7\.10') { return $true }
             $meta = Get-JarMetadataText -Path $JarPath
-            if ($meta -match '1\.7\.10') { return $true }
+            if ($meta -match '1\.7\.10' -or $meta -match 'mcversion.*1\.7\.10' -or $meta -match 'acceptedMinecraftVersions.*1\.7\.10') { return $true }
             Write-StatusLine -Kind 'WARN' -Message "Rejected $($Mod.Name): filename/metadata does not prove Minecraft 1.7.10: $name"
             return $false
         }
