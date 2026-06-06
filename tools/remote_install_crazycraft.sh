@@ -3,16 +3,18 @@ set -euo pipefail
 
 SERVER_DIR="/opt/minecraft/server"
 SERVICE_NAME="minecraft"
-PACK_NAME="CCU Server Pack Bat - 0.12.9.zip"
-PACK_URL="https://edge.forgecdn.net/files/8070/007/CCU%20Server%20Pack%20Bat%20-%200.12.9.zip"
-PACK_SHA256="0c7b14464dd659f2d11166822b146f2ab755d3992b4fb0ea029bd1a097991ad3"
+PACK_NAME="CrazyCraft4Server.zip"
+PACK_URL="https://vl4.voidswrath.com/releases/CrazyCraft4Server.zip"
+PACK_SHA256="eae8930d4a83bafcc32681b285dc0c663faa6a4a505550b5d254031a5e377c97"
 BACKUP_ROOT="/opt/minecraft/server-backups"
 CACHE_DIR="/opt/minecraft/pack-cache"
-JAVA_BIN="/opt/java/mc-java/bin/java"
+JAVA_ROOT="/opt/java/crazycraft4-java8"
+JAVA_TARBALL="${CACHE_DIR}/temurin-jdk8-linux-x64.tar.gz"
+JAVA_BIN="${JAVA_ROOT}/bin/java"
 STAMP="$(date -u +%Y%m%d-%H%M%S)"
-BACKUP_DIR="${BACKUP_ROOT}/pre-crazycraft-${STAMP}"
+BACKUP_DIR="${BACKUP_ROOT}/pre-crazycraft4-${STAMP}"
 PACK_PATH="${CACHE_DIR}/${PACK_NAME}"
-EXTRACT_DIR="${CACHE_DIR}/crazycraft-0.12.9-${STAMP}"
+EXTRACT_DIR="${CACHE_DIR}/crazycraft4-${STAMP}"
 
 need_cmd() {
   command -v "$1" >/dev/null 2>&1 || {
@@ -72,11 +74,17 @@ need_cmd curl
 need_cmd unzip
 need_cmd sha256sum
 need_cmd python3
-if [[ ! -x "$JAVA_BIN" ]]; then
-  JAVA_BIN="$(command -v java || true)"
+need_cmd tar
+
+if [[ ! -x "$JAVA_BIN" ]] || ! "$JAVA_BIN" -version 2>&1 | grep -q 'version "1\.8\.'; then
+  echo "Installing portable Java 8 for Crazy Craft 4.0..."
+  rm -rf "$JAVA_ROOT"
+  mkdir -p "$JAVA_ROOT" "$CACHE_DIR"
+  curl -fL --retry 5 --retry-delay 5 -o "$JAVA_TARBALL" "https://api.adoptium.net/v3/binary/latest/8/ga/linux/x64/jdk/hotspot/normal/eclipse"
+  tar -xzf "$JAVA_TARBALL" -C "$JAVA_ROOT" --strip-components=1
 fi
-if [[ -z "$JAVA_BIN" || ! -x "$JAVA_BIN" ]]; then
-  echo "Missing required command: java" >&2
+if [[ ! -x "$JAVA_BIN" ]] || ! "$JAVA_BIN" -version 2>&1 | grep -q 'version "1\.8\.'; then
+  echo "Java 8 install failed; ${JAVA_BIN} is not a working Java 8 runtime." >&2
   exit 1
 fi
 
@@ -106,7 +114,7 @@ if [[ -f "${SERVER_DIR}/server.properties" ]]; then
   cp -a "${SERVER_DIR}/server.properties" "$PROPS_BACKUP"
 fi
 
-echo "Downloading official Crazy Craft Updated server pack..."
+echo "Downloading official VoidLauncher-free Crazy Craft 4.0 server pack..."
 if [[ ! -f "$PACK_PATH" ]] || [[ "$(sha256sum "$PACK_PATH" | awk '{print $1}')" != "$PACK_SHA256" ]]; then
   rm -f "$PACK_PATH"
   curl -fL --retry 5 --retry-delay 5 -o "$PACK_PATH" "$PACK_URL"
@@ -127,7 +135,13 @@ echo "Removing old world and previous pack files..."
 for path in \
   world world_nether world_the_end DIM-1 DIM1 \
   mods config defaultconfigs kubejs scripts resourcepacks datapacks libraries \
-  crash-reports logs versions config-overrides resources; do
+  crash-reports logs versions config-overrides resources addons asm data debug \
+  modernfix patchouli_books server structures customnpcs journeymap \
+  mods.client-incompatible mods.client-only mods.disabled-startup-errors \
+  mods.extra-disabled-20260602-190824 mods.server-incompatible-20260604-015432 \
+  mods.server-only-disabled _PackBackups mod-removal-backups perf-removal-backups \
+  runtime-stability-backups tps-backups world-backups world-seed-backups \
+  backups local shrines-saves; do
   if [[ -e "${SERVER_DIR}/${path}" ]]; then
     rm -rf "${SERVER_DIR:?}/${path}"
   fi
@@ -142,21 +156,8 @@ find "$SERVER_DIR" -maxdepth 1 -type f \( \
   -name 'server-icon.png' \
 \) -delete
 
-echo "Installing Crazy Craft Updated server pack files..."
+echo "Installing Crazy Craft 4.0 server pack files..."
 cp -a "${EXTRACT_DIR}/." "$SERVER_DIR/"
-
-INCOMPATIBLE_DIR="${SERVER_DIR}/mods.server-incompatible-${STAMP}"
-mkdir -p "$INCOMPATIBLE_DIR"
-for path in "${SERVER_DIR}"/mods/enhanced_boss_bars*.jar; do
-  if [[ -e "$path" ]]; then
-    mv "$path" "$INCOMPATIBLE_DIR/"
-    echo "Moved server-incompatible mod $(basename "$path") to ${INCOMPATIBLE_DIR}"
-  fi
-done
-if [[ -f "${SERVER_DIR}/config/enhanced_boss_bars-common.toml" ]]; then
-  rm -f "${SERVER_DIR}/config/enhanced_boss_bars-common.toml"
-  echo "Removed server-incompatible config enhanced_boss_bars-common.toml"
-fi
 
 echo "Accepting EULA and preserving server properties..."
 printf 'eula=true\n' > "${SERVER_DIR}/eula.txt"
@@ -168,24 +169,21 @@ if [[ -f "$PROPS_BACKUP" ]]; then
   done
 fi
 set_property "${SERVER_DIR}/server.properties" "level-seed" ""
-set_property "${SERVER_DIR}/server.properties" "motd" "Crazy Craft Updated 0.12.9"
+set_property "${SERVER_DIR}/server.properties" "motd" "Crazy Craft 4.0 Official"
 
 cat > "${SERVER_DIR}/start-server.sh" <<'SH'
 #!/usr/bin/env bash
 set -euo pipefail
 cd /opt/minecraft/server
-exec /opt/java/mc-java/bin/java -Xms1G -Xmx2816M -XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200 -XX:+DisableExplicitGC -jar forge.jar nogui
+exec /opt/java/crazycraft4-java8/bin/java -Xms1G -Xmx2816M -XX:PermSize=256M -XX:MaxPermSize=512M -XX:+UseConcMarkSweepGC -jar forge-1.7.10-10.13.4.1558-1.7.10-universal.jar nogui
 SH
 chmod +x "${SERVER_DIR}/start-server.sh"
-if [[ "$JAVA_BIN" != "/opt/java/mc-java/bin/java" ]]; then
-  sed -i "s#exec /opt/java/mc-java/bin/java #exec ${JAVA_BIN} #" "${SERVER_DIR}/start-server.sh"
-fi
 chown -R "${SERVICE_USER}:${SERVICE_GROUP}" "$SERVER_DIR"
 
 echo "Updating systemd service..."
 cat > "/etc/systemd/system/${SERVICE_NAME}.service" <<SERVICE
 [Unit]
-Description=Minecraft Crazy Craft Updated Server
+Description=Minecraft Crazy Craft 4.0 Server
 After=network.target
 
 [Service]
@@ -208,7 +206,7 @@ systemctl enable "$SERVICE_NAME" >/dev/null
 echo "Starting ${SERVICE_NAME}..."
 systemctl start "$SERVICE_NAME"
 
-echo "Crazy Craft install staged."
+echo "Crazy Craft 4.0 install staged with a fresh world target."
 echo "Backup: ${BACKUP_DIR}"
 echo "Pack SHA-256: ${actual_sha}"
 echo "Java:"
