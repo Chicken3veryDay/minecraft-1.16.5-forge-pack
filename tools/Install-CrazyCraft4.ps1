@@ -15,6 +15,7 @@ $PackRoot = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $MinecraftRoot = Join-Path $env:APPDATA '.minecraft'
 $CacheRoot = Join-Path $PackRoot '_InstallCache\crazy-craft-4.0'
 $JavaRoot = Join-Path $PackRoot '_InstallCache\temurin-jdk8'
+$RequiredModsPath = Join-Path $PackRoot 'pack-sources\CrazyCraft4\mods.required.txt'
 $PackName = 'Crazy Craft 4.0 Official'
 $ProfileKey = 'crazy-craft-4.0-official'
 $ForgeVersionId = '1.7.10-Forge10.13.4.1558-1.7.10'
@@ -97,6 +98,9 @@ function Invoke-DownloadFile {
     )
 
     if ($ExpectedSize -gt 0 -and -not [string]::IsNullOrWhiteSpace($Sha256) -and (Test-ExpectedFile -Path $DestinationPath -Size $ExpectedSize -Sha256 $Sha256)) {
+        return
+    }
+    if ($ExpectedSize -eq 0 -and [string]::IsNullOrWhiteSpace($Sha256) -and (Test-Path -LiteralPath $DestinationPath)) {
         return
     }
 
@@ -238,6 +242,45 @@ function Expand-PackArchive([string]$ArchivePath, [string]$DestinationPath, [str
     }
 }
 
+function Expand-ClientPayloadSelective([string]$ArchivePath, [string]$DestinationPath) {
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    Ensure-Directory -Path $DestinationPath
+    $presentModNames = @{}
+    $modsRoot = Join-Path $DestinationPath 'mods'
+    if (Test-Path -LiteralPath $modsRoot) {
+        foreach ($jar in Get-ChildItem -LiteralPath $modsRoot -Recurse -Filter *.jar -ErrorAction SilentlyContinue) {
+            $presentModNames[$jar.Name.ToLowerInvariant()] = $true
+        }
+    }
+
+    $zip = [System.IO.Compression.ZipFile]::OpenRead($ArchivePath)
+    try {
+        $entries = @($zip.Entries)
+        $total = [Math]::Max(1, $entries.Count)
+        for ($i = 0; $i -lt $entries.Count; $i++) {
+            $entry = $entries[$i]
+            if ([string]::IsNullOrWhiteSpace($entry.FullName)) { continue }
+            $normalized = $entry.FullName.Replace('\', '/')
+            $isModJar = $normalized.StartsWith('mods/') -and $normalized.ToLowerInvariant().EndsWith('.jar')
+            if ($isModJar -and $presentModNames.ContainsKey((Split-Path -Leaf $normalized).ToLowerInvariant())) {
+                continue
+            }
+
+            Write-PackProgress -Activity 'Extracting Crazy Craft 4.0 client payload' -Status $entry.FullName -Percent ([int](($i * 100) / $total))
+            $target = Join-Path $DestinationPath ($normalized.Replace('/', [IO.Path]::DirectorySeparatorChar))
+            if ($normalized.EndsWith('/')) {
+                Ensure-Directory -Path $target
+                continue
+            }
+            Ensure-Directory -Path (Split-Path -Parent $target)
+            [System.IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $target, $true)
+        }
+    } finally {
+        $zip.Dispose()
+        Complete-PackProgress -Activity 'Extracting Crazy Craft 4.0 client payload'
+    }
+}
+
 function Ensure-ForgeInstaller {
     $path = Join-Path $CacheRoot 'forge-1.7.10-10.13.4.1558-1.7.10-installer.jar'
     Invoke-DownloadFile -Url $ForgeInstallerUrl -DestinationPath $path -Activity 'Downloading Forge 1.7.10 installer'
@@ -346,6 +389,55 @@ function Get-ModJarCount([string]$Path) {
     return @(Get-ChildItem -LiteralPath $mods -Recurse -Filter *.jar -ErrorAction SilentlyContinue).Count
 }
 
+function Get-RequiredModPaths {
+    if (-not (Test-Path -LiteralPath $RequiredModsPath)) {
+        throw "Required mod manifest is missing: $RequiredModsPath"
+    }
+    @(Get-Content -LiteralPath $RequiredModsPath | Where-Object {
+        -not [string]::IsNullOrWhiteSpace($_) -and -not $_.TrimStart().StartsWith('#')
+    })
+}
+
+function Test-RequiredModsPresent([string]$Path) {
+    $modsRoot = Join-Path $Path 'mods'
+    if (-not (Test-Path -LiteralPath $modsRoot)) {
+        return $false
+    }
+
+    $presentNames = @{}
+    foreach ($jar in Get-ChildItem -LiteralPath $modsRoot -Recurse -Filter *.jar -ErrorAction SilentlyContinue) {
+        $presentNames[$jar.Name.ToLowerInvariant()] = $true
+    }
+
+    foreach ($required in Get-RequiredModPaths) {
+        $relative = $required.Replace('/', [IO.Path]::DirectorySeparatorChar)
+        $exactPath = Join-Path $Path $relative
+        $name = Split-Path -Leaf $required
+        if ((Test-Path -LiteralPath $exactPath) -or $presentNames.ContainsKey($name.ToLowerInvariant())) {
+            continue
+        }
+        return $false
+    }
+    return $true
+}
+
+function Test-AnyRequiredModsPresent([string]$Path) {
+    $modsRoot = Join-Path $Path 'mods'
+    if (-not (Test-Path -LiteralPath $modsRoot)) {
+        return $false
+    }
+    $presentNames = @{}
+    foreach ($jar in Get-ChildItem -LiteralPath $modsRoot -Recurse -Filter *.jar -ErrorAction SilentlyContinue) {
+        $presentNames[$jar.Name.ToLowerInvariant()] = $true
+    }
+    foreach ($required in Get-RequiredModPaths) {
+        if ($presentNames.ContainsKey((Split-Path -Leaf $required).ToLowerInvariant())) {
+            return $true
+        }
+    }
+    return $false
+}
+
 function Remove-ServerRootFilesFromClient([string]$Path) {
     foreach ($name in @('eula.txt', 'Start Server.bat', 'minecraft_server.1.7.10.jar', 'forge-1.7.10-10.13.4.1558-1.7.10-universal.jar')) {
         $target = Join-Path $Path $name
@@ -357,22 +449,46 @@ function Remove-ServerRootFilesFromClient([string]$Path) {
 
 function Install-Client {
     Ensure-Directory -Path $CacheRoot
-    Ensure-PackZip $ClientZip | Out-Null
+    $modsAlreadyPresent = Test-RequiredModsPresent -Path $ClientPath
+    $someRequiredModsPresent = Test-AnyRequiredModsPresent -Path $ClientPath
+    if ($modsAlreadyPresent) {
+        Write-Host "Required Crazy Craft mods already exist in $ClientPath\mods; skipping payload download." -ForegroundColor Green
+    } else {
+        Ensure-PackZip $ClientZip | Out-Null
+    }
     Ensure-ForgeInstaller | Out-Null
     if ($VerifyOnly) {
-        Verify-PackZip $ClientZip
+        if ($modsAlreadyPresent) {
+            Write-Host "Verified existing mods folder: all required Crazy Craft mods are present." -ForegroundColor Green
+        } else {
+            Verify-PackZip $ClientZip
+        }
         return
     }
     if ($DownloadOnly) { return }
 
     Write-Step 'Staging Crazy Craft 4.0 client'
-    if ($Force) { Remove-DirectoryIfPresent -Path $ClientPath }
-    Ensure-Directory -Path $ClientPath
-    foreach ($dir in @('mods', 'config', 'scripts', 'resources', 'resourcepacks', 'shaderpacks')) {
-        Remove-DirectoryIfPresent -Path (Join-Path $ClientPath $dir)
+    if ($modsAlreadyPresent) {
+        Remove-ServerRootFilesFromClient -Path $ClientPath
+    } else {
+        if ($Force -and -not $someRequiredModsPresent) {
+            Remove-DirectoryIfPresent -Path $ClientPath
+        }
+        Ensure-Directory -Path $ClientPath
+        foreach ($dir in @('config', 'scripts', 'resources', 'resourcepacks', 'shaderpacks')) {
+            Remove-DirectoryIfPresent -Path (Join-Path $ClientPath $dir)
+        }
+        if (-not $someRequiredModsPresent) {
+            Remove-DirectoryIfPresent -Path (Join-Path $ClientPath 'mods')
+        }
+        Expand-ClientPayloadSelective -ArchivePath (Get-PackZipPath $ClientZip) -DestinationPath $ClientPath
+        Remove-ServerRootFilesFromClient -Path $ClientPath
     }
-    Expand-PackArchive -ArchivePath (Get-PackZipPath $ClientZip) -DestinationPath $ClientPath -Activity 'Extracting Crazy Craft 4.0 client payload'
-    Remove-ServerRootFilesFromClient -Path $ClientPath
+    <#
+    If all required mod jars are already present, do not refresh configs from the
+    payload. Refreshing configs would require downloading the large archive again,
+    which defeats the skip-existing-mods behavior this installer guarantees.
+    #>
     $modCount = Get-ModJarCount -Path $ClientPath
     if ($modCount -lt 60) {
         throw "Client staging failed; expected Crazy Craft mod files, found only $modCount mod jar(s)."
@@ -407,5 +523,7 @@ function Install-Server {
 }
 
 Write-Host "$PackName downloader"
+Write-Host "Minecraft: 1.7.10"
+Write-Host "Forge: 10.13.4.1558 ($ForgeVersionId)"
 Write-Host "Pack root: $PackRoot"
 if ($Server) { Install-Server } else { Install-Client }
