@@ -6,6 +6,9 @@ param(
     [string]$ServerPath,
     [switch]$VerifyOnly,
     [switch]$DownloadOnly,
+    [switch]$SkipShaders,
+    [string]$ShaderPackUrl,
+    [string]$ShaderPackName,
     [switch]$Force,
     [switch]$Diagnose,
     [switch]$RepairLauncherAuth,
@@ -48,6 +51,15 @@ function Get-ForwardArgs([switch]$IncludeSkipSelfUpdate) {
     if ($Server) { $forward += '-Server' }
     if ($VerifyOnly) { $forward += '-VerifyOnly' }
     if ($DownloadOnly) { $forward += '-DownloadOnly' }
+    if ($SkipShaders) { $forward += '-SkipShaders' }
+    if (-not [string]::IsNullOrWhiteSpace($ShaderPackUrl)) {
+        $forward += '-ShaderPackUrl'
+        $forward += $ShaderPackUrl
+    }
+    if (-not [string]::IsNullOrWhiteSpace($ShaderPackName)) {
+        $forward += '-ShaderPackName'
+        $forward += $ShaderPackName
+    }
     if ($Force) { $forward += '-Force' }
     if ($Diagnose) { $forward += '-Diagnose' }
     if ($RepairLauncherAuth) { $forward += '-RepairLauncherAuth' }
@@ -123,6 +135,7 @@ function Invoke-SelfUpdate {
         'Install-Minecraft-Pack.bat',
         'tools/Install-CrazyCraft4.ps1',
         'tools/Repair-MinecraftLauncherAuth.ps1',
+        'tools/Enable-CrazyCraftShaders.ps1',
         'pack-sources/CrazyCraft4/mods.required.txt'
     )
     $updated = $false
@@ -231,4 +244,33 @@ if (-not [string]::IsNullOrWhiteSpace($ServerPath)) {
 }
 
 & powershell.exe @argsList
-exit $LASTEXITCODE
+$mainExitCode = $LASTEXITCODE
+
+if ($mainExitCode -eq 0 -and $Client) {
+    $shaderScript = Join-Path $PackRoot 'tools\Enable-CrazyCraftShaders.ps1'
+    if (Test-Path -LiteralPath $shaderScript) {
+        $shaderArgs = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $shaderScript, '-Client')
+        if ($SkipShaders) { $shaderArgs += '-SkipShaders' }
+        if (-not [string]::IsNullOrWhiteSpace($ClientPath)) {
+            $shaderArgs += '-ClientPath'
+            $shaderArgs += $ClientPath
+        }
+        if (-not [string]::IsNullOrWhiteSpace($ShaderPackUrl)) {
+            $shaderArgs += '-ShaderPackUrl'
+            $shaderArgs += $ShaderPackUrl
+        }
+        if (-not [string]::IsNullOrWhiteSpace($ShaderPackName)) {
+            $shaderArgs += '-ShaderPackName'
+            $shaderArgs += $ShaderPackName
+        }
+        & powershell.exe @shaderArgs
+        $shaderExitCode = $LASTEXITCODE
+        if ($shaderExitCode -ne 0) {
+            Write-StatusLine -Kind 'WARN' -Message "Shader helper exited with code $shaderExitCode. The core installer already succeeded."
+        }
+    } else {
+        Write-StatusLine -Kind 'WARN' -Message "Shader helper not found at $shaderScript. Run self-update or download tools/Enable-CrazyCraftShaders.ps1."
+    }
+}
+
+exit $mainExitCode
