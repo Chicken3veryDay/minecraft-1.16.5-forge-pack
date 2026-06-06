@@ -1,11 +1,17 @@
 [CmdletBinding()]
 param(
+    [switch]$Client,
     [switch]$Server,
     [string]$ClientPath = (Join-Path $env:APPDATA '.minecraft\crazy-craft-4.0-official'),
     [string]$ServerPath,
     [switch]$VerifyOnly,
     [switch]$DownloadOnly,
-    [switch]$Force
+    [switch]$Force,
+    [switch]$Diagnose,
+    [switch]$MenuFpsSafeMode,
+    [switch]$RestoreMenuFpsMods,
+    [int]$MenuFpsBatch = 0,
+    [switch]$NoPrompt
 )
 
 $ErrorActionPreference = 'Stop'
@@ -27,6 +33,40 @@ $ClientFpsDisabledMods = @(
     'journeymappunlimited.jar',
     'Waila.jar'
 )
+$MenuFpsDiagnosticRootName = 'mods.disabled-diagnostic'
+$MenuFpsDiagnosticBatches = @(
+    @{
+        Id = 1
+        Name = 'fastcraft-render-hook'
+        Description = 'FastCraft compatibility and render-hook test'
+        Mods = @('fastcraft.jar', 'FastCraft*.jar')
+    },
+    @{
+        Id = 2
+        Name = 'client-render-overlays'
+        Description = 'Client-only overlays, hats, maps, inventory hooks, and iChun render toys'
+        Mods = @('Controlling.jar', 'InventoryTweaksdev.jar', 'journeymappunlimited.jar', 'Waila.jar', 'Hats.jar', 'HatStand.jar', 'PortalGunbeta.jar', 'GravityGun.jar')
+    },
+    @{
+        Id = 3
+        Name = 'model-heavy-content'
+        Description = 'Menu/model-heavy content suspects'
+        Mods = @('Decocraft.jar', 'PTRModelLib*.jar', 'Legends.jar', 'CustomNpcs.jar', 'MobProperties.jar', 'hbmBETA.jar')
+    },
+    @{
+        Id = 4
+        Name = 'large-content-suspects'
+        Description = 'Larger content/worldgen suspects for menu-only diagnosis'
+        Mods = @('HardcoreEnderExpansionMCv.jar', 'TragicMC.jar', 'Origin.jar', 'OreSpawn*.jar', 'MCHeli*.jar', 'MCheli*.jar', 'WelcomeToTheJungle.jar', 'MutantCreatures.jar')
+    }
+)
+$BrokenDownloadDisabledRootName = 'mods.disabled-broken-downloads'
+$PortalGunSoundPack = @{
+    Name = 'PortalGunSounds.pak'
+    Url = 'https://repo.creeperhost.net/ichun/assets/pg1.7.10/PortalGunSounds.pak'
+    Size = 14885449
+    Md5 = '12d76a36e95288b9e2ee9146f2e20ecd'
+}
 $ForgeInstallerUrl = 'https://maven.minecraftforge.net/net/minecraftforge/forge/1.7.10-10.13.4.1558-1.7.10/forge-1.7.10-10.13.4.1558-1.7.10-installer.jar'
 $ForgeUniversalUrl = 'https://maven.minecraftforge.net/net/minecraftforge/forge/1.7.10-10.13.4.1558-1.7.10/forge-1.7.10-10.13.4.1558-1.7.10-universal.jar'
 $ClientZip = @{
@@ -91,10 +131,10 @@ function Get-FileHashString([string]$Path, [string]$Algorithm) {
 
     $stream = [System.IO.File]::OpenRead($Path)
     try {
-        $hasher = if ($Algorithm -eq 'SHA1') {
-            [System.Security.Cryptography.SHA1]::Create()
-        } else {
-            [System.Security.Cryptography.SHA256]::Create()
+        switch ($Algorithm.ToUpperInvariant()) {
+            'MD5' { $hasher = [System.Security.Cryptography.MD5]::Create() }
+            'SHA1' { $hasher = [System.Security.Cryptography.SHA1]::Create() }
+            default { $hasher = [System.Security.Cryptography.SHA256]::Create() }
         }
         try {
             return (($hasher.ComputeHash($stream) | ForEach-Object { $_.ToString('x2') }) -join '')
@@ -278,7 +318,7 @@ function Expand-ClientPayloadSelective([string]$ArchivePath, [string]$Destinatio
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     Ensure-Directory -Path $DestinationPath
     $presentModNames = @{}
-    foreach ($rootName in @('mods', 'mods.disabled-client-fps')) {
+    foreach ($rootName in @('mods', 'mods.disabled-client-fps', $MenuFpsDiagnosticRootName)) {
         $root = Join-Path $DestinationPath $rootName
         if (Test-Path -LiteralPath $root) {
             foreach ($jar in Get-ChildItem -LiteralPath $root -Recurse -Filter *.jar -ErrorAction SilentlyContinue) {
@@ -437,12 +477,13 @@ function Get-RequiredModPaths {
 function Test-RequiredModsPresent([string]$Path) {
     $modsRoot = Join-Path $Path 'mods'
     $disabledRoot = Join-Path $Path 'mods.disabled-client-fps'
-    if (-not (Test-Path -LiteralPath $modsRoot) -and -not (Test-Path -LiteralPath $disabledRoot)) {
+    $diagnosticRoot = Join-Path $Path $MenuFpsDiagnosticRootName
+    if (-not (Test-Path -LiteralPath $modsRoot) -and -not (Test-Path -LiteralPath $disabledRoot) -and -not (Test-Path -LiteralPath $diagnosticRoot)) {
         return $false
     }
 
     $presentNames = @{}
-    foreach ($root in @($modsRoot, $disabledRoot)) {
+    foreach ($root in @($modsRoot, $disabledRoot, $diagnosticRoot)) {
         if (-not (Test-Path -LiteralPath $root)) { continue }
         foreach ($jar in Get-ChildItem -LiteralPath $root -Recurse -Filter *.jar -ErrorAction SilentlyContinue) {
             $presentNames[$jar.Name.ToLowerInvariant()] = $true
@@ -464,11 +505,12 @@ function Test-RequiredModsPresent([string]$Path) {
 function Test-AnyRequiredModsPresent([string]$Path) {
     $modsRoot = Join-Path $Path 'mods'
     $disabledRoot = Join-Path $Path 'mods.disabled-client-fps'
-    if (-not (Test-Path -LiteralPath $modsRoot) -and -not (Test-Path -LiteralPath $disabledRoot)) {
+    $diagnosticRoot = Join-Path $Path $MenuFpsDiagnosticRootName
+    if (-not (Test-Path -LiteralPath $modsRoot) -and -not (Test-Path -LiteralPath $disabledRoot) -and -not (Test-Path -LiteralPath $diagnosticRoot)) {
         return $false
     }
     $presentNames = @{}
-    foreach ($root in @($modsRoot, $disabledRoot)) {
+    foreach ($root in @($modsRoot, $disabledRoot, $diagnosticRoot)) {
         if (-not (Test-Path -LiteralPath $root)) { continue }
         foreach ($jar in Get-ChildItem -LiteralPath $root -Recurse -Filter *.jar -ErrorAction SilentlyContinue) {
             $presentNames[$jar.Name.ToLowerInvariant()] = $true
@@ -480,6 +522,394 @@ function Test-AnyRequiredModsPresent([string]$Path) {
         }
     }
     return $false
+}
+
+function Write-DiagnosticValue([string]$Name, $Value) {
+    $text = [string]$Value
+    if ([string]::IsNullOrWhiteSpace($text)) { $text = '(not found)' }
+    Write-Host ("{0}: {1}" -f $Name, $text)
+}
+
+function Get-ObjectPropertyValue($Object, [string]$Name) {
+    if ($null -eq $Object) { return $null }
+    $property = $Object.PSObject.Properties[$Name]
+    if ($property) { return $property.Value }
+    return $null
+}
+
+function Get-ModJarsUnder([string]$Root) {
+    if ([string]::IsNullOrWhiteSpace($Root) -or -not (Test-Path -LiteralPath $Root)) { return @() }
+    @(Get-ChildItem -LiteralPath $Root -Recurse -File -Filter *.jar -ErrorAction SilentlyContinue)
+}
+
+function Get-ModFilesByPatterns([string]$ModsRoot, [string[]]$Patterns) {
+    if ([string]::IsNullOrWhiteSpace($ModsRoot) -or -not (Test-Path -LiteralPath $ModsRoot)) { return @() }
+    $found = @{}
+    foreach ($pattern in $Patterns) {
+        foreach ($jar in Get-ChildItem -LiteralPath $ModsRoot -Recurse -File -Filter $pattern -ErrorAction SilentlyContinue) {
+            $found[$jar.FullName.ToLowerInvariant()] = $jar
+        }
+    }
+    @($found.Values)
+}
+
+function Get-MissingRequiredModPaths([string]$Path) {
+    $roots = @(
+        (Join-Path $Path 'mods'),
+        (Join-Path $Path 'mods.disabled-client-fps'),
+        (Join-Path $Path $MenuFpsDiagnosticRootName)
+    )
+    $presentNames = @{}
+    foreach ($root in $roots) {
+        foreach ($jar in Get-ModJarsUnder -Root $root) {
+            $presentNames[$jar.Name.ToLowerInvariant()] = $true
+        }
+    }
+
+    $missing = @()
+    foreach ($required in Get-RequiredModPaths) {
+        $relative = $required.Replace('/', [IO.Path]::DirectorySeparatorChar)
+        $exactPath = Join-Path $Path $relative
+        $name = Split-Path -Leaf $required
+        if ((Test-Path -LiteralPath $exactPath) -or $presentNames.ContainsKey($name.ToLowerInvariant())) {
+            continue
+        }
+        $missing += $required
+    }
+    $missing
+}
+
+function Get-BatchFolderName($Batch) {
+    'batch{0:00}-{1}' -f ([int]$Batch.Id), ([string]$Batch.Name)
+}
+
+function Get-MenuFpsBatch([int]$Id) {
+    @($MenuFpsDiagnosticBatches | Where-Object { [int]$_.Id -eq $Id } | Select-Object -First 1)
+}
+
+function Get-NextMenuFpsBatch {
+    $modsRoot = Join-Path $ClientPath 'mods'
+    foreach ($batch in $MenuFpsDiagnosticBatches) {
+        $active = @(Get-ModFilesByPatterns -ModsRoot $modsRoot -Patterns ([string[]]$batch.Mods))
+        if ($active.Count -gt 0) { return $batch }
+    }
+    return $null
+}
+
+function Move-ModsToDiagnosticFolder($Batch) {
+    $modsRoot = Join-Path $ClientPath 'mods'
+    if (-not (Test-Path -LiteralPath $modsRoot)) {
+        throw "Active mods folder was not found: $modsRoot"
+    }
+    $disabledRoot = Join-Path (Join-Path $ClientPath $MenuFpsDiagnosticRootName) (Get-BatchFolderName -Batch $Batch)
+    Ensure-Directory -Path $disabledRoot
+    $matches = @(Get-ModFilesByPatterns -ModsRoot $modsRoot -Patterns ([string[]]$Batch.Mods))
+    if ($matches.Count -eq 0) {
+        Write-Host "No active jars matched batch $($Batch.Id): $($Batch.Name)" -ForegroundColor Yellow
+        return 0
+    }
+
+    $modsFull = ([System.IO.Path]::GetFullPath($modsRoot)).TrimEnd([char[]]@([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar))
+    foreach ($match in $matches) {
+        $fileFull = [System.IO.Path]::GetFullPath($match.FullName)
+        $relative = $fileFull.Substring($modsFull.Length).TrimStart([char[]]@([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar))
+        $destination = Join-Path $disabledRoot $relative
+        Ensure-Directory -Path (Split-Path -Parent $destination)
+        if (Test-Path -LiteralPath $destination) {
+            $destination = Join-Path (Split-Path -Parent $destination) ("{0}.{1}{2}" -f [IO.Path]::GetFileNameWithoutExtension($destination), [DateTimeOffset]::UtcNow.ToUnixTimeSeconds(), [IO.Path]::GetExtension($destination))
+        }
+        Move-Item -LiteralPath $match.FullName -Destination $destination -Force
+        Write-Host "Diagnostic-disabled batch $($Batch.Id): $($match.Name)" -ForegroundColor Yellow
+    }
+    return $matches.Count
+}
+
+function Restore-MenuFpsDiagnosticMods {
+    $diagnosticRoot = Join-Path $ClientPath $MenuFpsDiagnosticRootName
+    if (-not (Test-Path -LiteralPath $diagnosticRoot)) {
+        Write-Host 'No diagnostic-disabled mods were found to restore.' -ForegroundColor Yellow
+        return
+    }
+    $modsRoot = Join-Path $ClientPath 'mods'
+    Ensure-Directory -Path $modsRoot
+    $restored = 0
+    foreach ($batchFolder in Get-ChildItem -LiteralPath $diagnosticRoot -Directory -ErrorAction SilentlyContinue) {
+        $batchFull = ([System.IO.Path]::GetFullPath($batchFolder.FullName)).TrimEnd([char[]]@([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar))
+        foreach ($jar in Get-ModJarsUnder -Root $batchFolder.FullName) {
+            $fileFull = [System.IO.Path]::GetFullPath($jar.FullName)
+            $relative = $fileFull.Substring($batchFull.Length).TrimStart([char[]]@([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar))
+            $destination = Join-Path $modsRoot $relative
+            Ensure-Directory -Path (Split-Path -Parent $destination)
+            if (Test-Path -LiteralPath $destination) {
+                Write-Warning "Restore skipped because an active jar already exists: $destination"
+                continue
+            }
+            Move-Item -LiteralPath $jar.FullName -Destination $destination
+            $restored++
+        }
+    }
+    Write-Host "Restored $restored diagnostic-disabled mod jar(s)." -ForegroundColor Green
+}
+
+function Invoke-MenuFpsSafeMode {
+    Write-Step 'Applying menu FPS diagnostic safe mode'
+    if ($MenuFpsBatch -gt 0) {
+        $batch = Get-MenuFpsBatch -Id $MenuFpsBatch
+        if ($null -eq $batch) { throw "Unknown menu FPS diagnostic batch: $MenuFpsBatch" }
+    } else {
+        $batch = Get-NextMenuFpsBatch
+        if ($null -eq $batch) {
+            Write-Host 'No active jars matched any menu FPS diagnostic batch.' -ForegroundColor Yellow
+            Write-Host 'Use -RestoreMenuFpsMods to restore previously disabled diagnostic batches.'
+            return
+        }
+    }
+
+    Write-Host ("Batch {0}: {1}" -f $batch.Id, $batch.Description)
+    $moved = Move-ModsToDiagnosticFolder -Batch $batch
+    Write-Host ''
+    Write-Host "Moved $moved jar(s) into $MenuFpsDiagnosticRootName. Launch the menu and compare FPS before applying another batch." -ForegroundColor Green
+    Write-Host 'To restore all diagnostic-disabled jars, rerun with -RestoreMenuFpsMods.'
+}
+
+function Get-FirstMatchingLine([string[]]$Lines, [string[]]$Patterns) {
+    foreach ($pattern in $Patterns) {
+        foreach ($line in $Lines) {
+            if ($line -match $pattern) { return $line }
+        }
+    }
+    return ''
+}
+
+function Get-LogTimeGaps([string[]]$Lines, [int]$ThresholdSeconds = 10) {
+    $gaps = @()
+    $lastTime = $null
+    $lastLine = ''
+    foreach ($line in $Lines) {
+        if ($line -match '^\[(\d{2}):(\d{2}):(\d{2})\]') {
+            $current = [DateTime]::Today.AddHours([int]$matches[1]).AddMinutes([int]$matches[2]).AddSeconds([int]$matches[3])
+            if ($null -ne $lastTime) {
+                if ($current -lt $lastTime) { $current = $current.AddDays(1) }
+                $seconds = [int]($current - $lastTime).TotalSeconds
+                if ($seconds -ge $ThresholdSeconds) {
+                    $gaps += [pscustomobject]@{ Seconds = $seconds; Before = $lastLine; After = $line }
+                }
+            }
+            $lastTime = $current
+            $lastLine = $line
+        }
+    }
+    @($gaps | Sort-Object Seconds -Descending | Select-Object -First 8)
+}
+
+function Get-TopLogIssues([string[]]$Lines) {
+    @($Lines |
+        Where-Object { $_ -match '/(WARN|ERROR)\]|/(FATAL)\]|\b(SEVERE|Exception|Error)\b' } |
+        ForEach-Object { ($_ -replace '^\[[^\]]+\]\s*', '').Trim() } |
+        Group-Object |
+        Sort-Object Count -Descending |
+        Select-Object -First 8)
+}
+
+function Get-DiagnosticLogLines([string]$Path) {
+    $head = @(Get-Content -LiteralPath $Path -TotalCount 5000 -ErrorAction SilentlyContinue)
+    $tail = @(Get-Content -LiteralPath $Path -Tail 12000 -ErrorAction SilentlyContinue)
+    @($head + $tail)
+}
+
+function Get-LogSearchCandidates {
+    $candidates = @()
+    $roots = @(
+        $MinecraftRoot,
+        (Join-Path $ClientPath 'logs')
+    )
+    if (-not [string]::IsNullOrWhiteSpace($env:LOCALAPPDATA)) {
+        $roots += Join-Path $env:LOCALAPPDATA 'Packages\Microsoft.4297127D64EC6_8wekyb3d8bbwe\LocalCache\Local\game'
+        $roots += Join-Path $env:LOCALAPPDATA 'Packages\Microsoft.4297127D64EC6_8wekyb3d8bbwe\LocalCache\Roaming\.minecraft'
+    }
+
+    foreach ($root in $roots) {
+        if (-not (Test-Path -LiteralPath $root)) { continue }
+        foreach ($filter in @('launcher_log*.txt', 'native*.log', '*.log')) {
+            $candidates += Get-ChildItem -LiteralPath $root -File -Filter $filter -ErrorAction SilentlyContinue
+        }
+    }
+
+    $seen = @{}
+    foreach ($file in @($candidates | Sort-Object LastWriteTime -Descending)) {
+        if ($seen.ContainsKey($file.FullName.ToLowerInvariant())) { continue }
+        $seen[$file.FullName.ToLowerInvariant()] = $true
+        $file
+    }
+}
+
+function Find-ErodedBadlandsMentions {
+    $mentions = @()
+    foreach ($file in @(Get-LogSearchCandidates | Select-Object -First 40)) {
+        try {
+            if ($file.Length -gt 20MB) {
+                $lineNumberBase = [Math]::Max(0, ($file.Length / 80) - 8000)
+                $lines = @(Get-Content -LiteralPath $file.FullName -Tail 8000 -ErrorAction SilentlyContinue)
+                for ($i = 0; $i -lt $lines.Count; $i++) {
+                    if ($lines[$i] -match 'Eroded Badlands|ErodedBadlands|eroded_badlands') {
+                        $mentions += [pscustomobject]@{ Path = $file.FullName; LineNumber = [int]($lineNumberBase + $i + 1); Line = $lines[$i].Trim() }
+                    }
+                    if ($mentions.Count -ge 8) { break }
+                }
+            } else {
+                $matches = @(Select-String -LiteralPath $file.FullName -SimpleMatch -Pattern @('Eroded Badlands', 'ErodedBadlands', 'eroded_badlands') -ErrorAction SilentlyContinue | Select-Object -First 3)
+                foreach ($match in $matches) {
+                    $mentions += [pscustomobject]@{ Path = $file.FullName; LineNumber = $match.LineNumber; Line = $match.Line.Trim() }
+                }
+            }
+        } catch {
+        }
+        if ($mentions.Count -ge 8) { break }
+    }
+    $mentions
+}
+
+function Get-MinecraftProcessInfo {
+    @(Get-Process -ErrorAction SilentlyContinue | Where-Object {
+        $_.ProcessName -in @('Minecraft', 'MinecraftLauncher', 'java', 'javaw')
+    } | Select-Object @{Name = 'Name'; Expression = { $_.ProcessName } }, @{Name = 'ProcessId'; Expression = { $_.Id } })
+}
+
+function Write-MenuFpsBatchStatus {
+    $modsRoot = Join-Path $ClientPath 'mods'
+    $diagnosticRoot = Join-Path $ClientPath $MenuFpsDiagnosticRootName
+    Write-Host ''
+    Write-Host 'Menu FPS diagnostic batches:'
+    foreach ($batch in $MenuFpsDiagnosticBatches) {
+        $activeCount = @(Get-ModFilesByPatterns -ModsRoot $modsRoot -Patterns ([string[]]$batch.Mods)).Count
+        $disabledFolder = Join-Path $diagnosticRoot (Get-BatchFolderName -Batch $batch)
+        $disabledCount = @(Get-ModJarsUnder -Root $disabledFolder).Count
+        Write-Host ("  {0}. {1}: active={2}, diagnostic-disabled={3}" -f $batch.Id, $batch.Name, $activeCount, $disabledCount)
+    }
+}
+
+function Diagnose-Client {
+    Write-Step 'Diagnosing Crazy Craft client'
+    Write-DiagnosticValue 'Client path' ([System.IO.Path]::GetFullPath($ClientPath))
+
+    $profilesPath = Join-Path $MinecraftRoot 'launcher_profiles.json'
+    Write-DiagnosticValue 'Launcher profiles' $profilesPath
+    $profiles = $null
+    if (Test-Path -LiteralPath $profilesPath) {
+        try {
+            $profiles = Get-Content -LiteralPath $profilesPath -Raw | ConvertFrom-Json
+        } catch {
+            Write-Warning "Could not parse launcher_profiles.json: $($_.Exception.Message)"
+        }
+    }
+
+    if ($null -ne $profiles) {
+        Write-DiagnosticValue 'Current selectedProfile' (Get-ObjectPropertyValue -Object $profiles -Name 'selectedProfile')
+        $profileContainer = Get-ObjectPropertyValue -Object $profiles -Name 'profiles'
+        $profile = Get-ObjectPropertyValue -Object $profileContainer -Name $ProfileKey
+        if ($null -eq $profile) {
+            Write-Host "Launcher profile '$ProfileKey' was not found." -ForegroundColor Yellow
+        } else {
+            Write-DiagnosticValue 'Profile name' (Get-ObjectPropertyValue -Object $profile -Name 'name')
+            Write-DiagnosticValue 'Profile gameDir' (Get-ObjectPropertyValue -Object $profile -Name 'gameDir')
+            Write-DiagnosticValue 'Profile javaDir' (Get-ObjectPropertyValue -Object $profile -Name 'javaDir')
+            Write-DiagnosticValue 'Profile javaArgs' (Get-ObjectPropertyValue -Object $profile -Name 'javaArgs')
+            Write-DiagnosticValue 'Profile lastVersionId' (Get-ObjectPropertyValue -Object $profile -Name 'lastVersionId')
+        }
+    } else {
+        Write-Host 'Launcher profile data was not available.' -ForegroundColor Yellow
+    }
+
+    $running = @(Get-MinecraftProcessInfo)
+    if ($running.Count -eq 0) {
+        Write-DiagnosticValue 'Minecraft/Launcher running' 'No'
+    } else {
+        Write-DiagnosticValue 'Minecraft/Launcher running' (($running | ForEach-Object { "$($_.Name)#$($_.ProcessId)" }) -join ', ')
+    }
+
+    $activeMods = @(Get-ModJarsUnder -Root (Join-Path $ClientPath 'mods'))
+    $fpsDisabled = @(Get-ModJarsUnder -Root (Join-Path $ClientPath 'mods.disabled-client-fps'))
+    $diagnosticDisabled = @(Get-ModJarsUnder -Root (Join-Path $ClientPath $MenuFpsDiagnosticRootName))
+    Write-DiagnosticValue 'Active mod jar count' $activeMods.Count
+    Write-DiagnosticValue 'Disabled FPS mod count' $fpsDisabled.Count
+    if ($fpsDisabled.Count -gt 0) {
+        Write-DiagnosticValue 'Disabled FPS mods' (($fpsDisabled | Select-Object -ExpandProperty Name | Sort-Object) -join ', ')
+    }
+    Write-DiagnosticValue 'Diagnostic-disabled mod count' $diagnosticDisabled.Count
+    $portalGunSoundPath = Join-Path (Join-Path $ClientPath 'mods') ([string]$PortalGunSoundPack.Name)
+    if (Test-PortalGunSoundPack -Path $portalGunSoundPath) {
+        Write-DiagnosticValue 'PortalGun sound pack' 'OK'
+    } elseif (Test-Path -LiteralPath $portalGunSoundPath) {
+        $portalGunSoundItem = Get-Item -LiteralPath $portalGunSoundPath
+        Write-DiagnosticValue 'PortalGun sound pack' ("Invalid ({0} bytes, expected {1})" -f $portalGunSoundItem.Length, $PortalGunSoundPack.Size)
+    } else {
+        Write-DiagnosticValue 'PortalGun sound pack' 'Missing'
+    }
+
+    $stillActive = @(Get-ModFilesByPatterns -ModsRoot (Join-Path $ClientPath 'mods') -Patterns $ClientFpsDisabledMods)
+    if ($stillActive.Count -gt 0) {
+        Write-DiagnosticValue 'FPS-disabled mods still active' (($stillActive | Select-Object -ExpandProperty Name | Sort-Object) -join ', ')
+    } else {
+        Write-DiagnosticValue 'FPS-disabled mods still active' 'No'
+    }
+
+    $missing = @(Get-MissingRequiredModPaths -Path $ClientPath)
+    if ($missing.Count -eq 0) {
+        Write-DiagnosticValue 'Missing required mods' 'No'
+    } else {
+        Write-DiagnosticValue 'Missing required mods' ($missing -join ', ')
+    }
+
+    $latestLog = Join-Path $ClientPath 'logs\latest.log'
+    Write-DiagnosticValue 'latest.log' $latestLog
+    if (Test-Path -LiteralPath $latestLog) {
+        $latestLogItem = Get-Item -LiteralPath $latestLog
+        Write-DiagnosticValue 'latest.log size MB' ('{0:N1}' -f ($latestLogItem.Length / 1MB))
+        Write-DiagnosticValue 'latest.log scan window' 'first 5000 lines plus last 12000 lines'
+        $lines = @(Get-DiagnosticLogLines -Path $latestLog)
+        Write-DiagnosticValue 'Log Java line' (Get-FirstMatchingLine -Lines $lines -Patterns @('Java is ', 'Java version', 'java\.version', 'Java VM Version'))
+        Write-DiagnosticValue 'Log JVM flags' (Get-FirstMatchingLine -Lines $lines -Patterns @('JVM Flags', 'JVM Arguments', 'java arguments', 'Process arguments'))
+        Write-DiagnosticValue 'Log GL renderer' (Get-FirstMatchingLine -Lines $lines -Patterns @('OpenGL:', 'GL info', 'OpenGL version', 'LWJGL'))
+        Write-DiagnosticValue 'Log mod-load line' (Get-FirstMatchingLine -Lines $lines -Patterns @('Forge Mod Loader has identified', 'mods loaded', 'Loaded mods', 'Mod state'))
+
+        $gaps = @(Get-LogTimeGaps -Lines $lines -ThresholdSeconds 10)
+        if ($gaps.Count -eq 0) {
+            Write-DiagnosticValue '10s+ log time gaps' 'No'
+        } else {
+            Write-Host '10s+ log time gaps:'
+            foreach ($gap in $gaps) {
+                Write-Host ("  {0}s before: {1}" -f $gap.Seconds, $gap.After)
+            }
+        }
+
+        $issues = @(Get-TopLogIssues -Lines $lines)
+        if ($issues.Count -eq 0) {
+            Write-DiagnosticValue 'Repeated WARN/ERROR/Exception lines' 'No'
+        } else {
+            Write-Host 'Repeated WARN/ERROR/Exception lines:'
+            foreach ($issue in $issues) {
+                Write-Host ("  x{0}: {1}" -f $issue.Count, $issue.Name)
+            }
+        }
+    } else {
+        Write-Host 'latest.log was not found. Launch the Crazy Craft profile once, then rerun -Diagnose.' -ForegroundColor Yellow
+    }
+
+    $eroded = @(Find-ErodedBadlandsMentions)
+    if ($eroded.Count -eq 0) {
+        Write-DiagnosticValue 'Eroded Badlands in detected logs' 'No'
+    } else {
+        Write-Host 'Eroded Badlands in detected logs:'
+        foreach ($mention in $eroded) {
+            Write-Host ("  {0}:{1}: {2}" -f $mention.Path, $mention.LineNumber, $mention.Line)
+        }
+    }
+
+    Write-MenuFpsBatchStatus
+    Write-Host ''
+    Write-Host 'If menu FPS is still extremely low after the Java/profile pin is visible in latest.log, close Minecraft and run:'
+    Write-Host '  powershell -NoProfile -ExecutionPolicy Bypass -File .\Install-Minecraft-Pack.ps1 -MenuFpsSafeMode'
+    Write-Host 'Rerun that command one batch at a time, testing menu FPS after each batch. Use -RestoreMenuFpsMods to undo diagnostic moves.'
 }
 
 function Remove-ServerRootFilesFromClient([string]$Path) {
@@ -503,6 +933,53 @@ function Disable-ClientFpsMods([string]$Path) {
             Move-Item -LiteralPath $match.FullName -Destination (Join-Path $disabledRoot $match.Name) -Force
             Write-Host "Disabled client FPS mod: $($match.Name)" -ForegroundColor Yellow
         }
+    }
+}
+
+function Test-PortalGunSoundPack([string]$Path) {
+    if (-not (Test-Path -LiteralPath $Path)) { return $false }
+    if ((Get-Item -LiteralPath $Path).Length -ne [long]$PortalGunSoundPack.Size) { return $false }
+    return (Get-FileHashString -Path $Path -Algorithm MD5) -eq ([string]$PortalGunSoundPack.Md5).ToLowerInvariant()
+}
+
+function Move-BrokenDownloadFile([string]$Path, [string]$Reason) {
+    if (-not (Test-Path -LiteralPath $Path)) { return }
+    $disabledRoot = Join-Path (Split-Path -Parent $Path) '..'
+    $disabledRoot = Join-Path $disabledRoot $BrokenDownloadDisabledRootName
+    $disabledRoot = [System.IO.Path]::GetFullPath($disabledRoot)
+    Ensure-Directory -Path $disabledRoot
+    $destination = Join-Path $disabledRoot ("{0}.{1}" -f (Split-Path -Leaf $Path), [DateTimeOffset]::UtcNow.ToUnixTimeSeconds())
+    Move-Item -LiteralPath $Path -Destination $destination -Force
+    Write-Host "Quarantined broken download: $(Split-Path -Leaf $Path) ($Reason)" -ForegroundColor Yellow
+}
+
+function Ensure-PortalGunSoundPack([string]$Path) {
+    $modsRoot = Join-Path $Path 'mods'
+    $portalGunJar = Join-Path $modsRoot 'PortalGunbeta.jar'
+    if (-not (Test-Path -LiteralPath $portalGunJar)) { return }
+
+    $soundPath = Join-Path $modsRoot ([string]$PortalGunSoundPack.Name)
+    $md5Path = "$soundPath.md5"
+    if (Test-PortalGunSoundPack -Path $soundPath) {
+        [System.IO.File]::WriteAllText($md5Path, [string]$PortalGunSoundPack.Md5, [System.Text.Encoding]::ASCII)
+        return
+    }
+
+    Write-Step 'Repairing PortalGun sound resource'
+    Move-BrokenDownloadFile -Path $soundPath -Reason 'invalid PortalGun sound pack'
+    Move-BrokenDownloadFile -Path $md5Path -Reason 'invalid PortalGun sound checksum'
+    try {
+        Invoke-DownloadFile -Url ([string]$PortalGunSoundPack.Url) -DestinationPath $soundPath -ExpectedSize ([long]$PortalGunSoundPack.Size) -Activity 'Downloading PortalGun sound pack'
+        if (-not (Test-PortalGunSoundPack -Path $soundPath)) {
+            throw "Downloaded PortalGun sound pack failed MD5 validation. Expected $($PortalGunSoundPack.Md5), got $(Get-FileHashString -Path $soundPath -Algorithm MD5)."
+        }
+        [System.IO.File]::WriteAllText($md5Path, [string]$PortalGunSoundPack.Md5, [System.Text.Encoding]::ASCII)
+        Write-Host 'PortalGun sound pack repaired.' -ForegroundColor Green
+    } catch {
+        Write-Warning "PortalGun sound repair failed: $($_.Exception.Message)"
+        Move-BrokenDownloadFile -Path $soundPath -Reason 'failed PortalGun sound repair'
+        Set-TextReplacement -Path (Join-Path $Path 'config\PortalGun.cfg') -Pattern '^\s*I:enableSounds=1\s*$' -Replacement '        I:enableSounds=0'
+        Write-Warning 'PortalGun sounds were disabled in config to avoid repeated bad runtime downloads.'
     }
 }
 
@@ -646,6 +1123,7 @@ function Install-Client {
     if ($modCount -lt 60) {
         throw "Client staging failed; expected Crazy Craft mod files, found only $modCount mod jar(s)."
     }
+    Ensure-PortalGunSoundPack -Path $ClientPath
     Apply-ClientPerformanceDefaults -Path $ClientPath
     Disable-ClientFpsMods -Path $ClientPath
     Ensure-MinecraftBaseMetadata
@@ -653,6 +1131,7 @@ function Install-Client {
     Update-LauncherProfile
     Write-Host ''
     Write-Host "Client ready: $ClientPath" -ForegroundColor Green
+    Write-Host "Launch the '$PackName' profile. If menu FPS is still extremely low, close Minecraft and rerun this installer with -Diagnose." -ForegroundColor Cyan
 }
 
 function Install-Server {
@@ -681,4 +1160,19 @@ Write-Host "$PackName downloader"
 Write-Host "Minecraft: 1.7.10"
 Write-Host "Forge: 10.13.4.1558 ($ForgeVersionId)"
 Write-Host "Pack root: $PackRoot"
-if ($Server) { Install-Server } else { Install-Client }
+if ($Client -and $Server) {
+    throw 'Choose either -Client or -Server, not both.'
+}
+if ($Diagnose) {
+    Diagnose-Client
+} elseif ($RestoreMenuFpsMods) {
+    Restore-MenuFpsDiagnosticMods
+    Diagnose-Client
+} elseif ($MenuFpsSafeMode) {
+    Invoke-MenuFpsSafeMode
+    Diagnose-Client
+} elseif ($Server) {
+    Install-Server
+} else {
+    Install-Client
+}
