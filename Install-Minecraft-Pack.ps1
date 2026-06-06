@@ -8,6 +8,7 @@ param(
     [switch]$DownloadOnly,
     [switch]$Force,
     [switch]$Diagnose,
+    [switch]$RepairLauncherAuth,
     [switch]$MenuFpsSafeMode,
     [switch]$RestoreMenuFpsMods,
     [int]$MenuFpsBatch = 0,
@@ -49,6 +50,7 @@ function Get-ForwardArgs([switch]$IncludeSkipSelfUpdate) {
     if ($DownloadOnly) { $forward += '-DownloadOnly' }
     if ($Force) { $forward += '-Force' }
     if ($Diagnose) { $forward += '-Diagnose' }
+    if ($RepairLauncherAuth) { $forward += '-RepairLauncherAuth' }
     if ($MenuFpsSafeMode) { $forward += '-MenuFpsSafeMode' }
     if ($RestoreMenuFpsMods) { $forward += '-RestoreMenuFpsMods' }
     if ($MenuFpsBatch -gt 0) {
@@ -87,9 +89,11 @@ function Select-InstallMode {
     Write-Host '      Downloads/stages the official CrazyCraft4Server.zip into a server folder. This does not update the client launcher profile.'
     Write-StatusLine -Kind 'INFO' -Message '3. Verify/diagnose existing client install'
     Write-Host '      No large pack download. Prints profile/runtime/log/mod diagnostics for the current client folder.'
+    Write-StatusLine -Kind 'INFO' -Message '4. Repair Launcher auth / Eroded Badlands'
+    Write-Host '      Repairs official Minecraft Launcher, Microsoft Store, Xbox, Gaming Services, and Windows auth components where possible.'
     Write-Host ''
     while ($true) {
-        $choice = Read-Host 'Choose 1, 2, or 3 [1]'
+        $choice = Read-Host 'Choose 1, 2, 3, or 4 [1]'
         if ([string]::IsNullOrWhiteSpace($choice)) { $choice = '1' }
         switch ($choice.Trim()) {
             '1' { $script:Client = $true; return }
@@ -107,7 +111,8 @@ function Select-InstallMode {
                 return
             }
             '3' { $script:Diagnose = $true; return }
-            default { Write-StatusLine -Kind 'WARN' -Message 'Please enter 1, 2, or 3.' }
+            '4' { $script:RepairLauncherAuth = $true; return }
+            default { Write-StatusLine -Kind 'WARN' -Message 'Please enter 1, 2, 3, or 4.' }
         }
     }
 }
@@ -117,6 +122,7 @@ function Invoke-SelfUpdate {
         'Install-Minecraft-Pack.ps1',
         'Install-Minecraft-Pack.bat',
         'tools/Install-CrazyCraft4.ps1',
+        'tools/Repair-MinecraftLauncherAuth.ps1',
         'pack-sources/CrazyCraft4/mods.required.txt'
     )
     $updated = $false
@@ -155,6 +161,20 @@ function Invoke-SelfUpdate {
     $updated
 }
 
+function Ensure-RepairLauncherAuthScript {
+    $relative = 'tools/Repair-MinecraftLauncherAuth.ps1'
+    $local = Join-Path $PackRoot ($relative.Replace('/', [IO.Path]::DirectorySeparatorChar))
+    if (Test-Path -LiteralPath $local) { return $local }
+
+    Write-StatusLine -Kind 'INFO' -Message 'Downloading launcher auth repair tool...'
+    $cacheBuster = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+    $url = "$RepoRawBase/$relative`?v=$cacheBuster"
+    New-Item -ItemType Directory -Path (Split-Path -Parent $local) -Force | Out-Null
+    Invoke-WebRequest -UseBasicParsing -Uri $url -OutFile $local
+    Write-StatusLine -Kind 'OK' -Message 'Launcher auth repair tool downloaded.'
+    return $local
+}
+
 if (-not $SkipSelfUpdate) {
     Write-Rule -Title 'Self update'
     Write-StatusLine -Kind 'INFO' -Message 'Checking for installer updates...'
@@ -170,7 +190,7 @@ if ($Client -and $Server) {
     throw 'Choose either -Client or -Server, not both.'
 }
 
-$hasExplicitMode = $Client -or $Server -or $VerifyOnly -or $DownloadOnly -or $Diagnose -or $MenuFpsSafeMode -or $RestoreMenuFpsMods
+$hasExplicitMode = $Client -or $Server -or $VerifyOnly -or $DownloadOnly -or $Diagnose -or $RepairLauncherAuth -or $MenuFpsSafeMode -or $RestoreMenuFpsMods
 if (-not $hasExplicitMode -and -not $NoPrompt) {
     if (Test-InteractiveHost) {
         Select-InstallMode
@@ -180,6 +200,12 @@ if (-not $hasExplicitMode -and -not $NoPrompt) {
 }
 
 $script = Join-Path $PackRoot 'tools\Install-CrazyCraft4.ps1'
+if ($RepairLauncherAuth) {
+    $repairScript = Ensure-RepairLauncherAuthScript
+    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $repairScript
+    exit $LASTEXITCODE
+}
+
 $argsList = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $script)
 if ($Client) { $argsList += '-Client' }
 if ($Server) { $argsList += '-Server' }
@@ -187,6 +213,7 @@ if ($VerifyOnly) { $argsList += '-VerifyOnly' }
 if ($DownloadOnly) { $argsList += '-DownloadOnly' }
 if ($Force) { $argsList += '-Force' }
 if ($Diagnose) { $argsList += '-Diagnose' }
+if ($RepairLauncherAuth) { $argsList += '-RepairLauncherAuth' }
 if ($MenuFpsSafeMode) { $argsList += '-MenuFpsSafeMode' }
 if ($RestoreMenuFpsMods) { $argsList += '-RestoreMenuFpsMods' }
 if ($MenuFpsBatch -gt 0) {
