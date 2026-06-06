@@ -15,7 +15,7 @@ $ProgressPreference = 'Continue'
 
 $DefaultOptiFineName = 'OptiFine_1.7.10_HD_U_E7.jar'
 $OptiFineMirrorPage = 'https://optifine.net/adloadx?f=OptiFine_1.7.10_HD_U_E7.jar'
-$DefaultShaderName = "Sildur's Vibrant Shaders v1.283 Lite.zip"
+$DefaultShaderName = 'Sildurs-Vibrant-Shaders-v1.283-Lite.zip'
 $DefaultShaderPage = 'https://www.mediafire.com/file/qctxcwq5vvdv867/Sildur%2527s_Vibrant_Shaders_v1.283_Lite.zip/file'
 $CacheRoot = Join-Path (Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)) '_InstallCache\crazy-craft-4.0\shaders'
 
@@ -34,6 +34,23 @@ function Ensure-Directory([string]$Path) {
     if (-not (Test-Path -LiteralPath $Path)) {
         New-Item -ItemType Directory -Path $Path -Force | Out-Null
     }
+}
+
+function Get-SafeFileName([string]$Name, [string]$FallbackName) {
+    if ([string]::IsNullOrWhiteSpace($Name)) { return $FallbackName }
+
+    $candidate = [System.Net.WebUtility]::UrlDecode($Name).Trim()
+    $candidate = $candidate.Replace("\'", "'")
+    $candidate = $candidate -replace '[\\/]+', '-'
+
+    foreach ($char in [IO.Path]::GetInvalidFileNameChars()) {
+        $candidate = $candidate.Replace($char, '-')
+    }
+
+    $candidate = ($candidate -replace '\s+', ' ').Trim(' ', '.', '-')
+    if ([string]::IsNullOrWhiteSpace($candidate)) { return $FallbackName }
+    if (-not $candidate.ToLowerInvariant().EndsWith('.zip')) { return $FallbackName }
+    return $candidate
 }
 
 function Invoke-TextRequest([string]$Url) {
@@ -81,13 +98,17 @@ function Resolve-MediaFireDirectDownloadUrl([string]$PageUrl) {
 }
 
 function Get-SafeShaderFileName([string]$Url, [string]$FallbackName) {
-    if (-not [string]::IsNullOrWhiteSpace($ShaderPackName)) { return $ShaderPackName }
+    if (-not [string]::IsNullOrWhiteSpace($ShaderPackName)) {
+        return Get-SafeFileName -Name $ShaderPackName -FallbackName $FallbackName
+    }
     try {
         $uri = [Uri]$Url
         $leaf = [System.Net.WebUtility]::UrlDecode((Split-Path -Leaf $uri.AbsolutePath))
-        if (-not [string]::IsNullOrWhiteSpace($leaf) -and $leaf.ToLowerInvariant().EndsWith('.zip')) { return $leaf }
+        if (-not [string]::IsNullOrWhiteSpace($leaf) -and $leaf.ToLowerInvariant().EndsWith('.zip')) {
+            return Get-SafeFileName -Name $leaf -FallbackName $FallbackName
+        }
     } catch { }
-    return $FallbackName
+    return Get-SafeFileName -Name $FallbackName -FallbackName $FallbackName
 }
 
 function Invoke-CachedDownload([string]$Url, [string]$DestinationPath, [string]$Activity) {
@@ -135,6 +156,7 @@ function Ensure-ShaderPack {
         $shaderName = Get-SafeShaderFileName -Url $downloadUrl -FallbackName $DefaultShaderName
         $cachePath = Join-Path $CacheRoot $shaderName
         $target = Join-Path $shaderpacksRoot $shaderName
+        Ensure-Directory -Path (Split-Path -Parent $target)
         Invoke-CachedDownload -Url $downloadUrl -DestinationPath $cachePath -Activity "Downloading shader pack $shaderName"
         Copy-Item -LiteralPath $cachePath -Destination $target -Force
         Write-StatusLine -Kind 'OK' -Message "Installed shader pack: $shaderName"
