@@ -19,6 +19,14 @@ $RequiredModsPath = Join-Path $PackRoot 'pack-sources\CrazyCraft4\mods.required.
 $PackName = 'Crazy Craft 4.0 Official'
 $ProfileKey = 'crazy-craft-4.0-official'
 $ForgeVersionId = '1.7.10-Forge10.13.4.1558-1.7.10'
+$ClientFpsDisabledMods = @(
+    'Controlling.jar',
+    'Hats.jar',
+    'HatStand.jar',
+    'InventoryTweaksdev.jar',
+    'journeymappunlimited.jar',
+    'Waila.jar'
+)
 $ForgeInstallerUrl = 'https://maven.minecraftforge.net/net/minecraftforge/forge/1.7.10-10.13.4.1558-1.7.10/forge-1.7.10-10.13.4.1558-1.7.10-installer.jar'
 $ForgeUniversalUrl = 'https://maven.minecraftforge.net/net/minecraftforge/forge/1.7.10-10.13.4.1558-1.7.10/forge-1.7.10-10.13.4.1558-1.7.10-universal.jar'
 $ClientZip = @{
@@ -246,10 +254,12 @@ function Expand-ClientPayloadSelective([string]$ArchivePath, [string]$Destinatio
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     Ensure-Directory -Path $DestinationPath
     $presentModNames = @{}
-    $modsRoot = Join-Path $DestinationPath 'mods'
-    if (Test-Path -LiteralPath $modsRoot) {
-        foreach ($jar in Get-ChildItem -LiteralPath $modsRoot -Recurse -Filter *.jar -ErrorAction SilentlyContinue) {
-            $presentModNames[$jar.Name.ToLowerInvariant()] = $true
+    foreach ($rootName in @('mods', 'mods.disabled-client-fps')) {
+        $root = Join-Path $DestinationPath $rootName
+        if (Test-Path -LiteralPath $root) {
+            foreach ($jar in Get-ChildItem -LiteralPath $root -Recurse -Filter *.jar -ErrorAction SilentlyContinue) {
+                $presentModNames[$jar.Name.ToLowerInvariant()] = $true
+            }
         }
     }
 
@@ -341,6 +351,7 @@ function Update-LauncherProfile {
     if (-not $profiles.profiles) {
         $profiles | Add-Member -NotePropertyName profiles -NotePropertyValue ([pscustomobject]@{})
     }
+    $javaTools = Get-Jdk8Tools
     $profile = [pscustomobject]@{
         name = $PackName
         type = 'custom'
@@ -348,7 +359,8 @@ function Update-LauncherProfile {
         lastUsed = [DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ss.fffZ')
         lastVersionId = $ForgeVersionId
         gameDir = [System.IO.Path]::GetFullPath($ClientPath)
-        javaArgs = '-Xms2G -Xmx4G -XX:+UseConcMarkSweepGC'
+        javaDir = $javaTools.Java
+        javaArgs = '-Xms512M -Xmx2560M -XX:+UseConcMarkSweepGC -XX:+CMSIncrementalMode -XX:-UseAdaptiveSizePolicy'
         icon = 'Grass'
     }
     if ($profiles.profiles.PSObject.Properties.Name -contains $ProfileKey) {
@@ -400,13 +412,17 @@ function Get-RequiredModPaths {
 
 function Test-RequiredModsPresent([string]$Path) {
     $modsRoot = Join-Path $Path 'mods'
-    if (-not (Test-Path -LiteralPath $modsRoot)) {
+    $disabledRoot = Join-Path $Path 'mods.disabled-client-fps'
+    if (-not (Test-Path -LiteralPath $modsRoot) -and -not (Test-Path -LiteralPath $disabledRoot)) {
         return $false
     }
 
     $presentNames = @{}
-    foreach ($jar in Get-ChildItem -LiteralPath $modsRoot -Recurse -Filter *.jar -ErrorAction SilentlyContinue) {
-        $presentNames[$jar.Name.ToLowerInvariant()] = $true
+    foreach ($root in @($modsRoot, $disabledRoot)) {
+        if (-not (Test-Path -LiteralPath $root)) { continue }
+        foreach ($jar in Get-ChildItem -LiteralPath $root -Recurse -Filter *.jar -ErrorAction SilentlyContinue) {
+            $presentNames[$jar.Name.ToLowerInvariant()] = $true
+        }
     }
 
     foreach ($required in Get-RequiredModPaths) {
@@ -423,12 +439,16 @@ function Test-RequiredModsPresent([string]$Path) {
 
 function Test-AnyRequiredModsPresent([string]$Path) {
     $modsRoot = Join-Path $Path 'mods'
-    if (-not (Test-Path -LiteralPath $modsRoot)) {
+    $disabledRoot = Join-Path $Path 'mods.disabled-client-fps'
+    if (-not (Test-Path -LiteralPath $modsRoot) -and -not (Test-Path -LiteralPath $disabledRoot)) {
         return $false
     }
     $presentNames = @{}
-    foreach ($jar in Get-ChildItem -LiteralPath $modsRoot -Recurse -Filter *.jar -ErrorAction SilentlyContinue) {
-        $presentNames[$jar.Name.ToLowerInvariant()] = $true
+    foreach ($root in @($modsRoot, $disabledRoot)) {
+        if (-not (Test-Path -LiteralPath $root)) { continue }
+        foreach ($jar in Get-ChildItem -LiteralPath $root -Recurse -Filter *.jar -ErrorAction SilentlyContinue) {
+            $presentNames[$jar.Name.ToLowerInvariant()] = $true
+        }
     }
     foreach ($required in Get-RequiredModPaths) {
         if ($presentNames.ContainsKey((Split-Path -Leaf $required).ToLowerInvariant())) {
@@ -445,6 +465,114 @@ function Remove-ServerRootFilesFromClient([string]$Path) {
             Remove-Item -LiteralPath $target -Force
         }
     }
+}
+
+function Disable-ClientFpsMods([string]$Path) {
+    $modsRoot = Join-Path $Path 'mods'
+    if (-not (Test-Path -LiteralPath $modsRoot)) { return }
+    $disabledRoot = Join-Path $Path 'mods.disabled-client-fps'
+    Ensure-Directory -Path $disabledRoot
+
+    foreach ($name in $ClientFpsDisabledMods) {
+        $matches = @(Get-ChildItem -LiteralPath $modsRoot -Recurse -File -Filter $name -ErrorAction SilentlyContinue)
+        foreach ($match in $matches) {
+            Move-Item -LiteralPath $match.FullName -Destination (Join-Path $disabledRoot $match.Name) -Force
+            Write-Host "Disabled client FPS mod: $($match.Name)" -ForegroundColor Yellow
+        }
+    }
+}
+
+function Set-TextReplacement([string]$Path, [string]$Pattern, [string]$Replacement) {
+    if (-not (Test-Path -LiteralPath $Path)) { return }
+    $text = Get-Content -LiteralPath $Path -Raw
+    $updated = [regex]::Replace($text, $Pattern, $Replacement, 'Multiline')
+    if ($updated -ne $text) {
+        [System.IO.File]::WriteAllText($Path, $updated, [System.Text.UTF8Encoding]::new($false))
+    }
+}
+
+function Write-ClientOptions([string]$Path) {
+    $optionsPath = Join-Path $Path 'options.txt'
+    $defaults = [ordered]@{
+        music = '0.0'
+        sound = '0.7'
+        invertYMouse = 'false'
+        mouseSensitivity = '0.5'
+        fov = '0.0'
+        gamma = '0.0'
+        viewDistance = '4'
+        guiScale = '0'
+        particles = '2'
+        bobView = 'true'
+        anaglyph3d = 'false'
+        advancedOpengl = 'true'
+        fboEnable = 'true'
+        difficulty = '1'
+        fancyGraphics = 'false'
+        ao = 'false'
+        clouds = 'false'
+        resourcePacks = '[]'
+        lastServer = ''
+        lang = 'en_US'
+        chatVisibility = '0'
+        chatColors = 'true'
+        chatLinks = 'true'
+        chatLinksPrompt = 'true'
+        chatOpacity = '1.0'
+        snooperEnabled = 'false'
+        fullscreen = 'false'
+        enableVsync = 'false'
+        useUnicodeFont = 'false'
+        mipmapLevels = '0'
+        forceUnicodeFont = 'false'
+    }
+
+    $existing = [ordered]@{}
+    if (Test-Path -LiteralPath $optionsPath) {
+        foreach ($line in Get-Content -LiteralPath $optionsPath) {
+            if ($line -match '^([^:]+):(.*)$') {
+                $existing[$matches[1]] = $matches[2]
+            }
+        }
+    }
+    foreach ($key in $defaults.Keys) {
+        $existing[$key] = $defaults[$key]
+    }
+    $lines = foreach ($key in $existing.Keys) {
+        "${key}:$($existing[$key])"
+    }
+    [System.IO.File]::WriteAllText($optionsPath, (($lines -join [Environment]::NewLine) + [Environment]::NewLine), [System.Text.UTF8Encoding]::new($false))
+}
+
+function Apply-ClientPerformanceDefaults([string]$Path) {
+    Write-Step 'Applying low-FPS client defaults'
+    Write-ClientOptions -Path $Path
+
+    Set-TextReplacement -Path (Join-Path $Path 'config\DamageIndicatorsMod.cfg') -Pattern '^\s*B:Enabled=true\s*$' -Replacement '        B:Enabled=false'
+    Set-TextReplacement -Path (Join-Path $Path 'config\DamageIndicatorsMod.cfg') -Pattern '^\s*B:ShowCriticalHits=true\s*$' -Replacement '        B:ShowCriticalHits=false'
+    Set-TextReplacement -Path (Join-Path $Path 'config\DamageIndicatorsMod.cfg') -Pattern '^\s*I:Range=30\s*$' -Replacement '        I:Range=8'
+    Set-TextReplacement -Path (Join-Path $Path 'config\DamageIndicatorsMod.cfg') -Pattern '^\s*B:Enable=true\s*$' -Replacement '        B:Enable=false'
+    Set-TextReplacement -Path (Join-Path $Path 'config\DamageIndicatorsMod.cfg') -Pattern '^\s*B:"Show Potion Effects"=true\s*$' -Replacement '        B:"Show Potion Effects"=false'
+
+    Set-TextReplacement -Path (Join-Path $Path 'config\Hats.cfg') -Pattern '^\s*I:maxHatRenders=\d+\s*$' -Replacement '    I:maxHatRenders=25'
+    Set-TextReplacement -Path (Join-Path $Path 'config\Hats.cfg') -Pattern '^\s*I:randomHat=\d+\s*$' -Replacement '    I:randomHat=0'
+    Set-TextReplacement -Path (Join-Path $Path 'config\Hats.cfg') -Pattern '^\s*I:renderHats=1\s*$' -Replacement '    I:renderHats=0'
+    Set-TextReplacement -Path (Join-Path $Path 'config\Hats.cfg') -Pattern '^\s*I:shouldOtherPlayersHaveHats=1\s*$' -Replacement '    I:shouldOtherPlayersHaveHats=0'
+    Set-TextReplacement -Path (Join-Path $Path 'config\Hats.cfg') -Pattern '^\s*I:showContributorHatsInGui=1\s*$' -Replacement '    I:showContributorHatsInGui=0'
+    Set-TextReplacement -Path (Join-Path $Path 'config\Hats.cfg') -Pattern '^\s*I:modMobSupport=1\s*$' -Replacement '    I:modMobSupport=0'
+
+    Set-TextReplacement -Path (Join-Path $Path 'config\Waila.cfg') -Pattern '^\s*B:waila\.cfg\.show=true\s*$' -Replacement '    B:waila.cfg.show=false'
+    Set-TextReplacement -Path (Join-Path $Path 'config\Waila.cfg') -Pattern '^\s*B:waila\.cfg\.showmode=true\s*$' -Replacement '    B:waila.cfg.showmode=false'
+
+    Set-TextReplacement -Path (Join-Path $Path 'config\MapWriter.cfg') -Pattern '^\s*I:enabled=1\s*$' -Replacement '    I:enabled=0'
+    Set-TextReplacement -Path (Join-Path $Path 'config\MapWriter.cfg') -Pattern '^\s*I:chunksPerTick=\d+\s*$' -Replacement '    I:chunksPerTick=1'
+    Set-TextReplacement -Path (Join-Path $Path 'config\MapWriter.cfg') -Pattern '^\s*I:regionFileOutputEnabledMP=1\s*$' -Replacement '    I:regionFileOutputEnabledMP=0'
+    Set-TextReplacement -Path (Join-Path $Path 'config\MapWriter.cfg') -Pattern '^\s*I:regionFileOutputEnabledSP=1\s*$' -Replacement '    I:regionFileOutputEnabledSP=0'
+    Set-TextReplacement -Path (Join-Path $Path 'config\MapWriter.cfg') -Pattern '^\s*I:textureSize=\d+\s*$' -Replacement '    I:textureSize=512'
+
+    Set-TextReplacement -Path (Join-Path $Path 'config\fastcraft.ini') -Pattern '^disableAnimations = false\s*$' -Replacement 'disableAnimations = true'
+    Set-TextReplacement -Path (Join-Path $Path 'config\fastcraft.ini') -Pattern '^asyncCulling = false\s*$' -Replacement 'asyncCulling = true'
+    Set-TextReplacement -Path (Join-Path $Path 'config\fastcraft.ini') -Pattern '^maxViewDistance = \d+\s*$' -Replacement 'maxViewDistance = 8'
 }
 
 function Install-Client {
@@ -493,6 +621,8 @@ function Install-Client {
     if ($modCount -lt 60) {
         throw "Client staging failed; expected Crazy Craft mod files, found only $modCount mod jar(s)."
     }
+    Apply-ClientPerformanceDefaults -Path $ClientPath
+    Disable-ClientFpsMods -Path $ClientPath
     Ensure-MinecraftBaseMetadata
     Install-ForgeClient
     Update-LauncherProfile
