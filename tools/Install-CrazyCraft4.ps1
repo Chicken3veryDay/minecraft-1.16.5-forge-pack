@@ -68,6 +68,22 @@ function Remove-DirectoryIfPresent([string]$Path) {
     }
 }
 
+function Stop-MinecraftProcesses {
+    $targets = @(Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | Where-Object {
+        $_.Name -in @('Minecraft.exe', 'MinecraftLauncher.exe') -or
+        (($_.Name -in @('java.exe', 'javaw.exe')) -and ([string]$_.CommandLine -match 'crazy-craft-4\.0-official|1\.7\.10-Forge10\.13\.4\.1558'))
+    })
+    if ($targets.Count -eq 0) { return }
+    Write-Host 'Closing Minecraft/Launcher so profile updates are applied...' -ForegroundColor Yellow
+    foreach ($process in $targets) {
+        try {
+            Stop-Process -Id $process.ProcessId -Force -ErrorAction SilentlyContinue
+        } catch {
+        }
+    }
+    Start-Sleep -Seconds 2
+}
+
 function Get-FileHashString([string]$Path, [string]$Algorithm) {
     if (Get-Command Get-FileHash -ErrorAction SilentlyContinue) {
         return (Get-FileHash -LiteralPath $Path -Algorithm $Algorithm).Hash.ToLowerInvariant()
@@ -178,8 +194,12 @@ function Get-Jdk8Tools {
     }
     foreach ($java in @($candidates | Select-Object -Unique)) {
         $jar = Join-Path (Split-Path -Parent $java) 'jar.exe'
+        $javaw = Join-Path (Split-Path -Parent $java) 'javaw.exe'
+        if (-not (Test-Path -LiteralPath $javaw)) {
+            $javaw = $java
+        }
         if ((Test-Java8 -Path $java) -and (Test-Path -LiteralPath $jar)) {
-            return [pscustomobject]@{ Java = $java; Jar = $jar }
+            return [pscustomobject]@{ Java = $java; Javaw = $javaw; Jar = $jar }
         }
     }
 
@@ -193,8 +213,12 @@ function Get-Jdk8Tools {
 
     foreach ($java in Get-ChildItem -Path $extractPath -Recurse -Filter java.exe | Select-Object -ExpandProperty FullName) {
         $jar = Join-Path (Split-Path -Parent $java) 'jar.exe'
+        $javaw = Join-Path (Split-Path -Parent $java) 'javaw.exe'
+        if (-not (Test-Path -LiteralPath $javaw)) {
+            $javaw = $java
+        }
         if ((Test-Java8 -Path $java) -and (Test-Path -LiteralPath $jar)) {
-            return [pscustomobject]@{ Java = $java; Jar = $jar }
+            return [pscustomobject]@{ Java = $java; Javaw = $javaw; Jar = $jar }
         }
     }
     throw 'Portable Java 8 JDK download completed, but java.exe and jar.exe were not found.'
@@ -359,7 +383,7 @@ function Update-LauncherProfile {
         lastUsed = [DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ss.fffZ')
         lastVersionId = $ForgeVersionId
         gameDir = [System.IO.Path]::GetFullPath($ClientPath)
-        javaDir = $javaTools.Java
+        javaDir = $javaTools.Javaw
         javaArgs = '-Xms512M -Xmx2560M -XX:+UseConcMarkSweepGC -XX:+CMSIncrementalMode -XX:-UseAdaptiveSizePolicy'
         icon = 'Grass'
     }
@@ -576,6 +600,7 @@ function Apply-ClientPerformanceDefaults([string]$Path) {
 }
 
 function Install-Client {
+    Stop-MinecraftProcesses
     Ensure-Directory -Path $CacheRoot
     $modsAlreadyPresent = Test-RequiredModsPresent -Path $ClientPath
     $someRequiredModsPresent = Test-AnyRequiredModsPresent -Path $ClientPath
