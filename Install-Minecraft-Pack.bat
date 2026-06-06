@@ -2,7 +2,16 @@
 setlocal
 cd /d "%~dp0"
 
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0Install-Minecraft-Pack.ps1" %*
+echo ========================================================================
+echo Updating installer from GitHub
+echo ========================================================================
+git pull --ff-only
+
+if "%*"=="" (
+  powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0Install-Minecraft-Pack.ps1" -Client -NoPrompt
+) else (
+  powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0Install-Minecraft-Pack.ps1" %*
+)
 set EXITCODE=%ERRORLEVEL%
 
 echo.
