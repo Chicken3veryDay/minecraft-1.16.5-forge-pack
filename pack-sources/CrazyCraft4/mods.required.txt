@@ -1,6 +1,5 @@
 mods/1.7.10/CodeChickenLib-1.7.10-1.1.3.138-universal.jar
 mods/1.7.10/CodingLib-0.2.8b50.jar
-mods/[1.7.10]Recipe-Scramble-1.7.5.jar
 mods/AdventureBackpack.jar
 mods/AnimationAPI.jar
 mods/ArchimedesPlus.jar

@@ -26,6 +26,8 @@ $PackName = 'Crazy Craft 4.0 Official'
 $ProfileKey = 'crazy-craft-4.0-official'
 $ForgeVersionId = '1.7.10-Forge10.13.4.1558-1.7.10'
 $ClientFpsDisabledMods = @(
+)
+$ClientQolMods = @(
     'Controlling.jar',
     'InventoryTweaksdev.jar',
     'journeymappunlimited.jar',
@@ -36,6 +38,10 @@ $ServerHandshakeRequiredClientMods = @(
     'HatStand.jar'
 )
 $MenuFpsDiagnosticRootName = 'mods.disabled-diagnostic'
+$RecipeScrambleDisabledRootName = 'mods.disabled-recipe-scramble'
+$RecipeScrambleMods = @(
+    '*Recipe-Scramble*.jar'
+)
 $MenuFpsDiagnosticBatches = @(
     @{
         Id = 1
@@ -232,6 +238,41 @@ function Ensure-Directory([string]$Path) {
     if (-not (Test-Path -LiteralPath $Path)) {
         New-Item -ItemType Directory -Path $Path -Force | Out-Null
     }
+}
+
+function New-MinecraftSeed {
+    $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+    $bytes = New-Object byte[] 8
+    try {
+        $rng.GetBytes($bytes)
+    } finally {
+        $rng.Dispose()
+    }
+    $seed = [BitConverter]::ToInt64($bytes, 0)
+    if ($seed -eq [Int64]::MinValue) { $seed = 0 }
+    $seed.ToString([Globalization.CultureInfo]::InvariantCulture)
+}
+
+function Set-ServerProperty([string]$Path, [string]$Name, [string]$Value) {
+    $lines = @()
+    if (Test-Path -LiteralPath $Path) {
+        $lines = @(Get-Content -LiteralPath $Path -ErrorAction SilentlyContinue)
+    } else {
+        Ensure-Directory -Path (Split-Path -Parent $Path)
+    }
+
+    $updated = $false
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+        if ($lines[$i] -like "$Name=*") {
+            $lines[$i] = "$Name=$Value"
+            $updated = $true
+            break
+        }
+    }
+    if (-not $updated) {
+        $lines += "$Name=$Value"
+    }
+    [System.IO.File]::WriteAllText($Path, (($lines -join [Environment]::NewLine) + [Environment]::NewLine), [System.Text.UTF8Encoding]::new($false))
 }
 
 function Remove-DirectoryIfPresent([string]$Path) {
@@ -1056,10 +1097,20 @@ function Diagnose-Client {
     Write-DiagnosticValue 'Server-required mods active' (Format-ModNameList -Names $handshakeStatus.Active)
     Write-DiagnosticValue 'Server-required mods disabled' (Format-ModNameList -Names $handshakeStatus.Disabled)
     Write-DiagnosticValue 'Server-required mods missing' (Format-ModNameList -Names $handshakeStatus.Missing)
+    $qolStatus = Get-ClientQolModStatus -Path $ClientPath
+    Write-DiagnosticValue 'QoL mods active' (Format-ModNameList -Names $qolStatus.Active)
+    Write-DiagnosticValue 'QoL mods disabled' (Format-ModNameList -Names $qolStatus.Disabled)
+    Write-DiagnosticValue 'QoL mods missing' (Format-ModNameList -Names $qolStatus.Missing)
+    $recipeScrambleStatus = Get-RecipeScrambleStatus -Path $ClientPath
+    Write-DiagnosticValue 'Recipe Scramble active' (Format-ModNameList -Names $recipeScrambleStatus.Active)
+    Write-DiagnosticValue 'Recipe Scramble disabled' (Format-ModNameList -Names $recipeScrambleStatus.Disabled)
     $portalGunSoundPath = Join-Path (Join-Path $ClientPath 'mods') ([string]$PortalGunSoundPack.Name)
     Write-DiagnosticValue 'PortalGun sound pack' (Format-PortalGunSoundPackStatus -Status (Get-PortalGunSoundPackStatus -Path $portalGunSoundPath))
     $notEnoughItemsStatus = Get-NotEnoughItemsStatus -Path $ClientPath
     Write-DiagnosticValue 'NotEnoughItems dependency' (Format-NotEnoughItemsStatus -Status $notEnoughItemsStatus)
+    Write-DiagnosticValue 'WAILA overlay config' (Get-ConfigMatchingLine -Path (Join-Path $ClientPath 'config\Waila.cfg') -Patterns @('B:waila\.cfg\.show='))
+    Write-DiagnosticValue 'WAILA health config' (Get-ConfigMatchingLine -Path (Join-Path $ClientPath 'config\Waila.cfg') -Patterns @('B:general\.showhp='))
+    Write-DiagnosticValue 'JourneyMap minimap config' (Get-ConfigMatchingLine -Path (Join-Path $ClientPath 'journeymap\config\5.1\journeymap.minimap.config') -Patterns @('"enabled":', '"active":'))
     Write-DiagnosticValue 'FoodPlus updater config' (Get-ConfigMatchingLine -Path (Join-Path $ClientPath 'config\FoodPlus.cfg') -Patterns @('Enable updater'))
     Write-DiagnosticValue 'CodeChicken update config' (Get-ConfigMatchingLine -Path (Join-Path $ClientPath 'config\CodeChickenCore.cfg') -Patterns @('checkUpdates'))
 
@@ -1230,9 +1281,119 @@ function Restore-ServerHandshakeClientMods([string]$Path) {
     }
 }
 
+function Get-ClientQolModStatus([string]$Path) {
+    $modsRoot = Join-Path $Path 'mods'
+    $disabledRoot = Join-Path $Path 'mods.disabled-client-fps'
+
+    $active = @()
+    $disabled = @()
+    $missing = @()
+    foreach ($name in $ClientQolMods) {
+        $activeMatches = @()
+        if (Test-Path -LiteralPath $modsRoot) {
+            $activeMatches = @(Get-ChildItem -LiteralPath $modsRoot -Recurse -File -Filter $name -ErrorAction SilentlyContinue)
+        }
+        if ($activeMatches.Count -gt 0) {
+            $active += $name
+            continue
+        }
+
+        $disabledMatches = @()
+        if (Test-Path -LiteralPath $disabledRoot) {
+            $disabledMatches = @(Get-ChildItem -LiteralPath $disabledRoot -Recurse -File -Filter $name -ErrorAction SilentlyContinue)
+        }
+        if ($disabledMatches.Count -gt 0) {
+            $disabled += $name
+        } else {
+            $missing += $name
+        }
+    }
+
+    [pscustomobject]@{
+        Active = $active
+        Disabled = $disabled
+        Missing = $missing
+    }
+}
+
+function Restore-ClientQolMods([string]$Path) {
+    $modsRoot = Join-Path $Path 'mods'
+    $disabledRoot = Join-Path $Path 'mods.disabled-client-fps'
+    Ensure-Directory -Path $modsRoot
+
+    $restored = 0
+    foreach ($name in $ClientQolMods) {
+        if (@(Get-ChildItem -LiteralPath $modsRoot -Recurse -File -Filter $name -ErrorAction SilentlyContinue).Count -gt 0) {
+            continue
+        }
+        if (-not (Test-Path -LiteralPath $disabledRoot)) { continue }
+        $source = @(Get-ChildItem -LiteralPath $disabledRoot -Recurse -File -Filter $name -ErrorAction SilentlyContinue | Select-Object -First 1)
+        if ($source.Count -eq 0) { continue }
+        $destination = Join-Path $modsRoot $source[0].Name
+        Move-Item -LiteralPath $source[0].FullName -Destination $destination -Force
+        Write-StatusLine -Kind 'OK' -Message "Restored QoL client mod: $($source[0].Name)"
+        $restored++
+    }
+
+    $status = Get-ClientQolModStatus -Path $Path
+    if ($status.Missing.Count -gt 0) {
+        Write-StatusLine -Kind 'WARN' -Message "QoL client mods missing: $(Format-ModNameList -Names $status.Missing)"
+    }
+    if ($restored -gt 0) {
+        Add-Completion "Restored $restored QoL client mod jar(s): $(Format-ModNameList -Names $status.Active)."
+    } else {
+        Add-Completion "QoL client mods are active: $(Format-ModNameList -Names $status.Active)."
+    }
+}
+
+function Get-RecipeScrambleStatus([string]$Path) {
+    $modsRoot = Join-Path $Path 'mods'
+    $disabledRoot = Join-Path $Path $RecipeScrambleDisabledRootName
+    $active = @(Get-ModFilesByPatterns -ModsRoot $modsRoot -Patterns $RecipeScrambleMods)
+    $disabled = @(Get-ModFilesByPatterns -ModsRoot $disabledRoot -Patterns $RecipeScrambleMods)
+
+    [pscustomobject]@{
+        Active = @($active | Select-Object -ExpandProperty Name)
+        Disabled = @($disabled | Select-Object -ExpandProperty Name)
+        Missing = ($active.Count -eq 0 -and $disabled.Count -eq 0)
+    }
+}
+
+function Disable-RecipeScrambleMod([string]$Path) {
+    $modsRoot = Join-Path $Path 'mods'
+    if (-not (Test-Path -LiteralPath $modsRoot)) { return }
+    $disabledRoot = Join-Path $Path $RecipeScrambleDisabledRootName
+    Ensure-Directory -Path $disabledRoot
+
+    $matches = @(Get-ModFilesByPatterns -ModsRoot $modsRoot -Patterns $RecipeScrambleMods)
+    $moved = 0
+    foreach ($match in $matches) {
+        $destination = Join-Path $disabledRoot $match.Name
+        Move-Item -LiteralPath $match.FullName -Destination $destination -Force
+        Write-StatusLine -Kind 'OK' -Message "Disabled randomized crafting mod: $($match.Name)"
+        $moved++
+    }
+
+    $status = Get-RecipeScrambleStatus -Path $Path
+    if ($status.Active.Count -gt 0) {
+        throw "Recipe Scramble is still active: $(Format-ModNameList -Names $status.Active)."
+    }
+    if ($moved -gt 0) {
+        Add-Completion "Disabled Recipe Scramble to restore normal crafting recipes; moved $moved jar(s) into $RecipeScrambleDisabledRootName."
+    } elseif ($status.Disabled.Count -gt 0) {
+        Add-Completion "Recipe Scramble is already disabled in $RecipeScrambleDisabledRootName."
+    } else {
+        Add-Completion 'Recipe Scramble was not present.'
+    }
+}
+
 function Disable-ClientFpsMods([string]$Path) {
     $modsRoot = Join-Path $Path 'mods'
     if (-not (Test-Path -LiteralPath $modsRoot)) { return }
+    if ($ClientFpsDisabledMods.Count -eq 0) {
+        Add-Completion 'No client QoL mods are auto-disabled; WAILA/JourneyMap/InventoryTweaks/Controlling remain active.'
+        return
+    }
     $disabledRoot = Join-Path $Path 'mods.disabled-client-fps'
     Ensure-Directory -Path $disabledRoot
 
@@ -1508,8 +1669,9 @@ function Apply-ClientPerformanceDefaults([string]$Path) {
     Set-TextReplacement -Path (Join-Path $Path 'config\Hats.cfg') -Pattern '^\s*I:showContributorHatsInGui=1\s*$' -Replacement '    I:showContributorHatsInGui=0'
     Set-TextReplacement -Path (Join-Path $Path 'config\Hats.cfg') -Pattern '^\s*I:modMobSupport=1\s*$' -Replacement '    I:modMobSupport=0'
 
-    Set-TextReplacement -Path (Join-Path $Path 'config\Waila.cfg') -Pattern '^\s*B:waila\.cfg\.show=true\s*$' -Replacement '    B:waila.cfg.show=false'
-    Set-TextReplacement -Path (Join-Path $Path 'config\Waila.cfg') -Pattern '^\s*B:waila\.cfg\.showmode=true\s*$' -Replacement '    B:waila.cfg.showmode=false'
+    Set-TextReplacement -Path (Join-Path $Path 'config\Waila.cfg') -Pattern '^\s*B:waila\.cfg\.show=false\s*$' -Replacement '    B:waila.cfg.show=true'
+    Set-TextReplacement -Path (Join-Path $Path 'config\Waila.cfg') -Pattern '^\s*B:waila\.cfg\.showmode=false\s*$' -Replacement '    B:waila.cfg.showmode=true'
+    Set-TextReplacement -Path (Join-Path $Path 'config\Waila.cfg') -Pattern '^\s*B:general\.showhp=false\s*$' -Replacement '    B:general.showhp=true'
 
     Set-TextReplacement -Path (Join-Path $Path 'config\MapWriter.cfg') -Pattern '^\s*I:enabled=1\s*$' -Replacement '    I:enabled=0'
     Set-TextReplacement -Path (Join-Path $Path 'config\MapWriter.cfg') -Pattern '^\s*I:chunksPerTick=\d+\s*$' -Replacement '    I:chunksPerTick=1'
@@ -1526,7 +1688,8 @@ function Apply-ClientUpdateNoticeDefaults([string]$Path) {
     Write-Step 'Applying legacy mod updater defaults'
     Set-TextReplacement -Path (Join-Path $Path 'config\FoodPlus.cfg') -Pattern '^\s*B:"Enable updater"=true\s*$' -Replacement '    B:"Enable updater"=false'
     Set-TextReplacement -Path (Join-Path $Path 'config\CodeChickenCore.cfg') -Pattern '^\s*checkUpdates=true\s*$' -Replacement 'checkUpdates=false'
-    Add-Completion 'Legacy FoodPlus and CodeChicken update popups are disabled when their configs are present.'
+    Set-TextReplacement -Path (Join-Path $Path 'journeymap\config\5.1\journeymap.core.config') -Pattern '^\s*"checkUpdates": true,\s*$' -Replacement '  "checkUpdates": false,'
+    Add-Completion 'Legacy FoodPlus, CodeChicken, and JourneyMap update popups are disabled when their configs are present.'
 }
 
 function Install-Client {
@@ -1579,6 +1742,8 @@ function Install-Client {
         Add-Completion 'Client payload staged and server-only root files removed.'
     }
     Restore-ServerHandshakeClientMods -Path $ClientPath
+    Restore-ClientQolMods -Path $ClientPath
+    Disable-RecipeScrambleMod -Path $ClientPath
     <#
     If all required mod jars are already present, do not refresh configs from the
     payload. Refreshing configs would require downloading the large archive again,
@@ -1624,17 +1789,25 @@ function Install-Server {
     }
 
     Write-Step 'Staging Crazy Craft 4.0 server'
+    $freshSeed = New-MinecraftSeed
+    Write-KeyValue -Name 'Fresh world seed' -Value $freshSeed
     if ($Force) { Remove-DirectoryIfPresent -Path $ServerPath }
     Ensure-Directory -Path $ServerPath
     foreach ($path in @('mods', 'config', 'libraries', 'logs', 'crash-reports', 'world', 'world_nether', 'world_the_end', 'DIM-1', 'DIM1')) {
         Remove-DirectoryIfPresent -Path (Join-Path $ServerPath $path)
     }
     Expand-PackArchive -ArchivePath (Get-PackZipPath $ServerZip) -DestinationPath $ServerPath -Activity 'Extracting Crazy Craft 4.0 server'
+    Disable-RecipeScrambleMod -Path $ServerPath
     Write-Host 'eula=true' | Set-Content -LiteralPath (Join-Path $ServerPath 'eula.txt') -Encoding ASCII
+    $serverProperties = Join-Path $ServerPath 'server.properties'
+    Set-ServerProperty -Path $serverProperties -Name 'level-seed' -Value $freshSeed
+    Set-ServerProperty -Path $serverProperties -Name 'motd' -Value 'Crazy Craft 4.0 Official'
     Add-Completion "Server payload staged at $ServerPath."
+    Add-Completion "Fresh server world seed generated: $freshSeed."
     Add-Completion 'Server eula.txt written with eula=true.'
     Write-Rule -Title 'Server payload ready' -Color 'Green'
     Write-KeyValue -Name 'Server path' -Value $ServerPath
+    Write-KeyValue -Name 'Fresh world seed' -Value $freshSeed
 }
 
 Write-InstallerHeader

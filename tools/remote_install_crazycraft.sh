@@ -76,6 +76,13 @@ need_cmd sha256sum
 need_cmd python3
 need_cmd tar
 
+NEW_LEVEL_SEED="$(
+  python3 - <<'PY'
+import random
+print(random.SystemRandom().randint(-(2**63), 2**63 - 1))
+PY
+)"
+
 if [[ ! -x "$JAVA_BIN" ]] || ! "$JAVA_BIN" -version 2>&1 | grep -q 'version "1\.8\.'; then
   echo "Installing portable Java 8 for Crazy Craft 4.0..."
   rm -rf "$JAVA_ROOT"
@@ -96,6 +103,7 @@ if id minecraft >/dev/null 2>&1; then
 fi
 
 mkdir -p "$BACKUP_DIR" "$CACHE_DIR"
+printf '%s\n' "$NEW_LEVEL_SEED" > "${BACKUP_DIR}/new-level-seed.txt"
 
 echo "Stopping ${SERVICE_NAME}..."
 systemctl stop "$SERVICE_NAME" || true
@@ -131,6 +139,7 @@ unzip -q "$PACK_PATH" -d "$EXTRACT_DIR"
 
 mkdir -p "$SERVER_DIR"
 
+echo "Fresh world seed for reset: ${NEW_LEVEL_SEED}"
 echo "Removing old world and previous pack files..."
 for path in \
   world world_nether world_the_end DIM-1 DIM1 \
@@ -139,7 +148,7 @@ for path in \
   modernfix patchouli_books server structures customnpcs journeymap \
   mods.client-incompatible mods.client-only mods.disabled-startup-errors \
   mods.extra-disabled-20260602-190824 mods.server-incompatible-20260604-015432 \
-  mods.server-only-disabled _PackBackups mod-removal-backups perf-removal-backups \
+  mods.server-only-disabled mods.disabled-recipe-scramble _PackBackups mod-removal-backups perf-removal-backups \
   runtime-stability-backups tps-backups world-backups world-seed-backups \
   backups local shrines-saves; do
   if [[ -e "${SERVER_DIR}/${path}" ]]; then
@@ -159,6 +168,10 @@ find "$SERVER_DIR" -maxdepth 1 -type f \( \
 echo "Installing Crazy Craft 4.0 server pack files..."
 cp -a "${EXTRACT_DIR}/." "$SERVER_DIR/"
 
+echo "Disabling Recipe Scramble so crafting recipes stay normal..."
+mkdir -p "${SERVER_DIR}/mods.disabled-recipe-scramble"
+find "${SERVER_DIR}/mods" -maxdepth 1 -type f -name '*Recipe-Scramble*.jar' -exec mv -f {} "${SERVER_DIR}/mods.disabled-recipe-scramble/" \;
+
 echo "Accepting EULA and preserving server properties..."
 printf 'eula=true\n' > "${SERVER_DIR}/eula.txt"
 
@@ -168,7 +181,7 @@ if [[ -f "$PROPS_BACKUP" ]]; then
     copy_property_if_present "$PROPS_BACKUP" "${SERVER_DIR}/server.properties" "$key"
   done
 fi
-set_property "${SERVER_DIR}/server.properties" "level-seed" ""
+set_property "${SERVER_DIR}/server.properties" "level-seed" "$NEW_LEVEL_SEED"
 set_property "${SERVER_DIR}/server.properties" "motd" "Crazy Craft 4.0 Official"
 
 cat > "${SERVER_DIR}/start-server.sh" <<'SH'
