@@ -19,8 +19,9 @@ $Mods = @(
     @{ Name='VeinMiner'; Side='both'; Patterns=@('VeinMiner*.jar','veinminer*.jar'); Slugs=@('veinminer'); Notes='Configure for ores/logs only; keep stone/dirt/netherrack disabled.' },
     @{ Name='Mouse Tweaks'; Side='client'; Patterns=@('MouseTweaks*.jar','Mouse-Tweaks*.jar','mousetweaks*.jar'); Slugs=@('mouse-tweaks','mousetweaks'); Notes='Client-only inventory controls.' },
     @{ Name='Fast Leaf Decay'; Side='both'; Patterns=@('FastLeafDecay*.jar','fastleafdecay*.jar','Fast-Leaf-Decay*.jar'); Slugs=@('fast-leaf-decay','fastleafdecay'); Notes='Faster leaf cleanup after tree chopping.' },
-    @{ Name='AromaBackup'; Side='server'; Patterns=@('AromaBackup*.jar','aromabackup*.jar'); Slugs=@('aromabackup','aromabackup-backup'); Notes='Server backups. Requires matching 1.7.10 build and may require Aroma1997Core.' },
-    @{ Name='Aroma1997Core'; Side='server'; Patterns=@('Aroma1997Core*.jar','aroma1997core*.jar'); Slugs=@('aroma1997core'); Notes='Dependency for AromaBackup if required.' },
+    @{ Name='LunatriusCore'; Side='server'; Patterns=@('LunatriusCore*.jar','lunatriuscore*.jar'); Slugs=@('lunatriuscore'); Notes='Required dependency for AromaBackup on Minecraft 1.7.10.' },
+    @{ Name='AromaBackup'; Side='server'; Patterns=@('AromaBackup*.jar','aromabackup*.jar'); Slugs=@('aromabackup','aromabackup-backup'); Requires=@('LunatriusCore'); Notes='Server backups. Requires a matching 1.7.10 LunatriusCore jar.' },
+    @{ Name='Aroma1997Core'; Side='server'; Patterns=@('Aroma1997Core*.jar','aroma1997core*.jar'); Slugs=@('aroma1997core'); Notes='Dependency for some Aroma1997 mods.' },
     @{ Name='Morpheus'; Side='server'; Patterns=@('Morpheus*.jar','morpheus*.jar'); Slugs=@('morpheus'); Notes='Multiplayer sleep voting.' },
     @{ Name='Stackie'; Side='server'; Patterns=@('Stackie*.jar','stackie*.jar'); Slugs=@('stackie'); Notes='Stacks dropped items to reduce entity spam. Test before relying on it.' },
     @{ Name='TrashSlot'; Side='client'; Patterns=@('TrashSlot*.jar','trashslot*.jar','TrashSlot_*.jar'); Slugs=@('trashslot','trash-slot'); Notes='Client trash slot if a confirmed 1.7.10 Forge build is available.' },
@@ -57,6 +58,23 @@ function Test-ZipJar([string]$Path) {
     } catch { return $false }
 }
 
+function Get-JarMetadataText([string]$Path) {
+    $texts = @()
+    try {
+        Add-Type -AssemblyName System.IO.Compression.FileSystem -ErrorAction SilentlyContinue
+        $zip = [System.IO.Compression.ZipFile]::OpenRead($Path)
+        try {
+            foreach ($entry in $zip.Entries) {
+                if ($entry.FullName -match '(^|/)(mcmod\.info|mods\.toml|META-INF/mods\.toml|fabric\.mod\.json|version\.json)$') {
+                    $reader = New-Object IO.StreamReader($entry.Open())
+                    try { $texts += $reader.ReadToEnd() } finally { $reader.Dispose() }
+                }
+            }
+        } finally { $zip.Dispose() }
+    } catch { }
+    return ($texts -join "`n")
+}
+
 function Test-Legacy1710Jar($Mod, [string]$JarPath) {
     $name = [IO.Path]::GetFileName($JarPath)
     $lower = $name.ToLowerInvariant()
@@ -66,7 +84,6 @@ function Test-Legacy1710Jar($Mod, [string]$JarPath) {
         return $false
     }
 
-    # Hard reject obvious wrong Minecraft/loader eras. This prevents 1.16/1.20 jars from being copied just because the name matches.
     if ($lower -match '(fabric|quilt|neoforge)' -or $lower -match '(mc|minecraft)?1\.(8|9|10|11|12|13|14|15|16|17|18|19|20|21)') {
         Write-StatusLine -Kind 'WARN' -Message "Rejected $($Mod.Name): not Minecraft 1.7.10: $name"
         return $false
@@ -74,14 +91,15 @@ function Test-Legacy1710Jar($Mod, [string]$JarPath) {
 
     switch ($Mod.Name) {
         'BetterFps' {
-            # BetterFps-1.0.1 is the known old build commonly used with 1.7.10. Anything modern-looking was rejected above.
             if ($lower -eq 'betterfps-1.0.1.jar' -or $lower -match '1\.7\.10') { return $true }
             Write-StatusLine -Kind 'WARN' -Message "Rejected BetterFps until proven 1.7.10: $name"
             return $false
         }
         default {
             if ($lower -match '1\.7\.10' -or $lower -match 'mc1\.7\.10') { return $true }
-            Write-StatusLine -Kind 'WARN' -Message "Rejected $($Mod.Name): filename does not prove Minecraft 1.7.10: $name"
+            $meta = Get-JarMetadataText -Path $JarPath
+            if ($meta -match '1\.7\.10') { return $true }
+            Write-StatusLine -Kind 'WARN' -Message "Rejected $($Mod.Name): filename/metadata does not prove Minecraft 1.7.10: $name"
             return $false
         }
     }
@@ -162,11 +180,10 @@ function Write-QoLConfigNotes([string]$TargetRoot, [string]$Side) {
         '====================================',
         '',
         'Only jars that clearly validate as Forge/Minecraft 1.7.10 should be installed.',
-        'VeinMiner: allow ores and logs only; keep stone, dirt, sand, gravel, netherrack, and end stone disabled.',
-        'VeinMiner: require a held tool and sneak/keybind; max blocks should stay around 32-64 for this VPS.',
+        'AromaBackup requires LunatriusCore 1.7.10. If LunatriusCore is missing, keep AromaBackup disabled and use OS/systemd backups instead.',
+        'VeinMiner/OreExcavation: allow ores and logs only; keep stone, dirt, sand, gravel, netherrack, and end stone disabled.',
         'FastLeafDecay: safe default behavior is fine.',
         'Morpheus: recommended sleep vote threshold is 50% for 3 players.',
-        'AromaBackup: recommended interval is 30-60 minutes and keep a small rolling backup count.',
         'Stackie: keep conservative stack radius/settings if installed.',
         'AutoTrash/TrashSlot: client-only convenience mods; keep server folder clean.',
         '',
@@ -180,8 +197,18 @@ function Install-QoLForSide([string]$Side, [string]$TargetRoot) {
     Ensure-Directory -Path $TargetRoot
     Write-StatusLine -Kind 'INFO' -Message "QoL target [$Side]: $TargetRoot"
 
+    $resolved = @{}
     foreach ($mod in $Mods) {
         if ($mod.Side -ne 'both' -and $mod.Side -ne $Side) { continue }
+
+        if ($mod.ContainsKey('Requires')) {
+            $missingDeps = @($mod.Requires | Where-Object { -not $resolved.ContainsKey($_) })
+            if ($missingDeps.Count -gt 0) {
+                Write-StatusLine -Kind 'WARN' -Message "Skipping $($mod.Name): missing dependency jar(s): $($missingDeps -join ', '). $($mod.Notes)"
+                continue
+            }
+        }
+
         $jar = Find-LocalJar -Mod $mod -Side $Side
         if ([string]::IsNullOrWhiteSpace($jar)) {
             $candidate = Get-ModrinthJar -Slugs $mod.Slugs -Name $mod.Name
@@ -192,6 +219,7 @@ function Install-QoLForSide([string]$Side, [string]$TargetRoot) {
             continue
         }
         Install-JarToMods -JarPath $jar -TargetRoot $TargetRoot -Name $mod.Name
+        $resolved[$mod.Name] = $jar
     }
     Write-QoLConfigNotes -TargetRoot $TargetRoot -Side $Side
 }
@@ -203,4 +231,4 @@ if ($Server) {
     Install-QoLForSide -Side 'server' -TargetRoot $ServerPath
 }
 
-Write-StatusLine -Kind 'INFO' -Message 'QoL install pass finished. Wrong-version jars are rejected instead of installed.'
+Write-StatusLine -Kind 'INFO' -Message 'QoL install pass finished. Wrong-version jars and missing-dependency installs are rejected.'
