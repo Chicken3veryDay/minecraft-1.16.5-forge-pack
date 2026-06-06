@@ -98,6 +98,80 @@ function Write-JsonFileNoBom {
     [System.IO.File]::WriteAllText($Path, $json, $encoding)
 }
 
+function Get-GitHubReleaseAssetFallbackUrls {
+    param(
+        [string]$AssetUrl,
+        [string]$ArchiveName
+    )
+
+    if ([string]::IsNullOrWhiteSpace($AssetUrl) -or [string]::IsNullOrWhiteSpace($ArchiveName)) {
+        return @()
+    }
+
+    $uri = [uri]$AssetUrl
+    if ($uri.Host -notin @('github.com', 'www.github.com')) {
+        return @()
+    }
+
+    $segments = @($uri.AbsolutePath.Trim('/') -split '/')
+    if ($segments.Count -lt 2) {
+        return @()
+    }
+
+    $owner = $segments[0]
+    $repo = $segments[1]
+    $apiUrl = "https://api.github.com/repos/$owner/$repo/releases?per_page=20"
+    try {
+        $releases = Invoke-RestMethod -Uri $apiUrl -UseBasicParsing -Headers @{ 'User-Agent' = 'ForgeProjectEChaosPackInstaller' }
+    }
+    catch {
+        Write-Warning "Could not search GitHub releases for '$ArchiveName': $($_.Exception.Message)"
+        return @()
+    }
+
+    @(
+        foreach ($release in @($releases)) {
+            foreach ($asset in @($release.assets)) {
+                if ([string]$asset.name -eq $ArchiveName -and -not [string]::IsNullOrWhiteSpace([string]$asset.browser_download_url)) {
+                    [string]$asset.browser_download_url
+                }
+            }
+        }
+    ) | Select-Object -Unique
+}
+
+function Invoke-DownloadWithHashCheck {
+    param(
+        [string]$Url,
+        [string]$DestinationPath,
+        [string]$ExpectedHash
+    )
+
+    $tempPath = "$DestinationPath.download"
+    if (Test-Path -LiteralPath $tempPath) {
+        Remove-Item -LiteralPath $tempPath -Force
+    }
+
+    try {
+        Write-Host "Downloading $Url"
+        Invoke-WebRequest -Uri $Url -OutFile $tempPath -UseBasicParsing
+
+        if (-not [string]::IsNullOrWhiteSpace($ExpectedHash)) {
+            $actual = Get-FileHashSha256 -Path $tempPath
+            if ($actual -ne $ExpectedHash) {
+                throw "Downloaded asset archive hash mismatch. Expected $ExpectedHash, got $actual."
+            }
+        }
+
+        Move-Item -LiteralPath $tempPath -Destination $DestinationPath -Force
+    }
+    finally {
+        if (Test-Path -LiteralPath $tempPath) {
+            Remove-Item -LiteralPath $tempPath -Force
+        }
+    }
+}
+
 function Get-ManifestAssetArchivePath {
     param([object]$Manifest)
 
@@ -132,17 +206,22 @@ function Get-ManifestAssetArchivePath {
     if (-not [string]::IsNullOrWhiteSpace($assetUrl) -and -not [string]::IsNullOrWhiteSpace($archiveName)) {
         $downloadPath = Join-Path $PackRoot $archiveName
         Write-Step "Downloading pack assets"
-        Write-Host "Downloading $assetUrl"
-        Invoke-WebRequest -Uri $assetUrl -OutFile $downloadPath
-
-        if (-not [string]::IsNullOrWhiteSpace($expectedHash)) {
-            $actual = Get-FileHashSha256 -Path $downloadPath
-            if ($actual -ne $expectedHash) {
-                throw "Downloaded asset archive hash mismatch. Expected $expectedHash, got $actual."
+        $downloadUrls = @($assetUrl) + @(Get-GitHubReleaseAssetFallbackUrls -AssetUrl $assetUrl -ArchiveName $archiveName)
+        $lastError = $null
+        foreach ($downloadUrl in @($downloadUrls | Select-Object -Unique)) {
+            try {
+                Invoke-DownloadWithHashCheck -Url $downloadUrl -DestinationPath $downloadPath -ExpectedHash $expectedHash
+                return $downloadPath
+            }
+            catch {
+                $lastError = $_
+                Write-Warning "Could not download '$archiveName' from '$downloadUrl': $($_.Exception.Message)"
             }
         }
 
-        return $downloadPath
+        if ($null -ne $lastError) {
+            throw "Could not download pack asset archive '$archiveName'. Last error: $($lastError.Exception.Message)"
+        }
     }
 
     $downloadHint = ''
