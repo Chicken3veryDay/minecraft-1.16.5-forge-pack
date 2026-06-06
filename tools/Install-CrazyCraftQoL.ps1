@@ -24,6 +24,7 @@ $Mods = @(
     @{ Name='Morpheus'; Side='server'; Patterns=@('Morpheus*.jar','morpheus*.jar'); Slugs=@('morpheus'); Notes='Multiplayer sleep voting.' },
     @{ Name='Stackie'; Side='server'; Patterns=@('Stackie*.jar','stackie*.jar'); Slugs=@('stackie'); Notes='Stacks dropped items to reduce entity spam. Test before relying on it.' },
     @{ Name='TrashSlot'; Side='client'; Patterns=@('TrashSlot*.jar','trashslot*.jar','TrashSlot_*.jar'); Slugs=@('trashslot','trash-slot'); Notes='Client trash slot if a 1.7.10 build is available.' },
+    @{ Name='AutoTrash'; Side='client'; Patterns=@('AutoTrash*.jar','auto-trash*.jar','autotrash*.jar'); Slugs=@('auto-trash','autotrash'); Notes='Client auto-trash/trash filtering if a confirmed 1.7.10 build is available.' },
     @{ Name='BetterFps'; Side='client'; Patterns=@('BetterFps*.jar','betterfps*.jar'); Slugs=@('betterfps','better-fps'); Notes='Client FPS tweak. FastCraft is already installed, so test this before keeping it.' }
 )
 
@@ -113,6 +114,7 @@ function Write-QoLConfigNotes([string]$TargetRoot, [string]$Side) {
         'Morpheus: recommended sleep vote threshold is 50% for 3 players.',
         'AromaBackup: recommended interval is 30-60 minutes and keep a small rolling backup count.',
         'Stackie: keep conservative stack radius/settings if installed.',
+        'AutoTrash/TrashSlot: client-only convenience mods; keep server folder clean.',
         '',
         "Generated for side: $Side"
     )
