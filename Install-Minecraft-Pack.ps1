@@ -12,17 +12,44 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$ProgressPreference = 'SilentlyContinue'
+$ProgressPreference = 'Continue'
 
 $PackRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ManifestPath = Join-Path $PackRoot '.pack-manifest.json'
 $MinecraftRoot = Join-Path $env:APPDATA '.minecraft'
 $AssetExtractRoot = Join-Path $PackRoot '_pack-assets'
+$UpdaterRoot = Join-Path $PackRoot '_pack-updater'
+$InstallerBoundParameters = @{}
+foreach ($key in $PSBoundParameters.Keys) {
+    $InstallerBoundParameters[$key] = $PSBoundParameters[$key]
+}
 
 function Write-Step {
     param([string]$Message)
     Write-Host ""
     Write-Host "== $Message ==" -ForegroundColor Cyan
+    Write-Progress -Id 1 -Activity "Forge ProjectE Chaos Pack" -Status $Message -PercentComplete 0
+}
+
+function Write-PackProgress {
+    param(
+        [string]$Activity,
+        [string]$Status,
+        [int]$PercentComplete,
+        [int]$Id = 2
+    )
+
+    $percent = [Math]::Max(0, [Math]::Min(100, $PercentComplete))
+    Write-Progress -Id $Id -Activity $Activity -Status $Status -PercentComplete $percent
+}
+
+function Complete-PackProgress {
+    param(
+        [string]$Activity,
+        [int]$Id = 2
+    )
+
+    Write-Progress -Id $Id -Activity $Activity -Completed
 }
 
 function Ensure-Directory {
@@ -98,6 +125,52 @@ function Write-JsonFileNoBom {
     [System.IO.File]::WriteAllText($Path, $json, $encoding)
 }
 
+function Get-GitHubRepositoryFromAssetUrl {
+    param([string]$AssetUrl)
+
+    if ([string]::IsNullOrWhiteSpace($AssetUrl)) {
+        return $null
+    }
+
+    $uri = [uri]$AssetUrl
+    if ($uri.Host -notin @('github.com', 'www.github.com')) {
+        return $null
+    }
+
+    $segments = @($uri.AbsolutePath.Trim('/') -split '/')
+    if ($segments.Count -lt 2) {
+        return $null
+    }
+
+    return [pscustomobject]@{
+        owner = $segments[0]
+        repo = $segments[1]
+    }
+}
+
+function Invoke-GitHubApi {
+    param([string]$Url)
+    Invoke-RestMethod -Uri $Url -UseBasicParsing -Headers @{ 'User-Agent' = 'ForgeProjectEChaosPackInstaller' }
+}
+
+function Get-LatestGitHubRelease {
+    param([object]$Manifest)
+
+    $repo = Get-GitHubRepositoryFromAssetUrl -AssetUrl ([string]$Manifest.assetArchive.url)
+    if ($null -eq $repo) {
+        return $null
+    }
+
+    $releases = Invoke-GitHubApi -Url "https://api.github.com/repos/$($repo.owner)/$($repo.repo)/releases?per_page=10"
+    foreach ($release in $releases) {
+        if (-not [bool]$release.draft -and -not [bool]$release.prerelease) {
+            return $release
+        }
+    }
+
+    return $null
+}
+
 function Get-GitHubReleaseAssetFallbackUrls {
     param(
         [string]$AssetUrl,
@@ -108,21 +181,14 @@ function Get-GitHubReleaseAssetFallbackUrls {
         return @()
     }
 
-    $uri = [uri]$AssetUrl
-    if ($uri.Host -notin @('github.com', 'www.github.com')) {
+    $repo = Get-GitHubRepositoryFromAssetUrl -AssetUrl $AssetUrl
+    if ($null -eq $repo) {
         return @()
     }
 
-    $segments = @($uri.AbsolutePath.Trim('/') -split '/')
-    if ($segments.Count -lt 2) {
-        return @()
-    }
-
-    $owner = $segments[0]
-    $repo = $segments[1]
-    $apiUrl = "https://api.github.com/repos/$owner/$repo/releases?per_page=20"
+    $apiUrl = "https://api.github.com/repos/$($repo.owner)/$($repo.repo)/releases?per_page=20"
     try {
-        $releases = Invoke-RestMethod -Uri $apiUrl -UseBasicParsing -Headers @{ 'User-Agent' = 'ForgeProjectEChaosPackInstaller' }
+        $releases = Invoke-GitHubApi -Url $apiUrl
     }
     catch {
         Write-Warning "Could not search GitHub releases for '$ArchiveName': $($_.Exception.Message)"
@@ -154,13 +220,42 @@ function Invoke-DownloadWithHashCheck {
 
     try {
         Write-Host "Downloading $Url"
-        Invoke-WebRequest -Uri $Url -OutFile $tempPath -UseBasicParsing
+        $request = [System.Net.HttpWebRequest]::Create($Url)
+        $request.UserAgent = 'ForgeProjectEChaosPackInstaller'
+        $response = $request.GetResponse()
+        try {
+            $totalBytes = [int64]$response.ContentLength
+            $buffer = New-Object byte[] (1024 * 1024)
+            $readBytes = [int64]0
+            $stream = $response.GetResponseStream()
+            $file = [System.IO.File]::Open($tempPath, [System.IO.FileMode]::Create, [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
+            try {
+                while (($count = $stream.Read($buffer, 0, $buffer.Length)) -gt 0) {
+                    $file.Write($buffer, 0, $count)
+                    $readBytes += $count
+                    if ($totalBytes -gt 0) {
+                        $percent = [int](($readBytes * 100) / $totalBytes)
+                        Write-PackProgress -Activity "Downloading pack assets" -Status ("{0:N1} / {1:N1} MB" -f ($readBytes / 1MB), ($totalBytes / 1MB)) -PercentComplete $percent
+                    }
+                }
+            }
+            finally {
+                $file.Dispose()
+                $stream.Dispose()
+            }
+        }
+        finally {
+            $response.Dispose()
+            Complete-PackProgress -Activity "Downloading pack assets"
+        }
 
         if (-not [string]::IsNullOrWhiteSpace($ExpectedHash)) {
+            Write-PackProgress -Activity "Verifying download" -Status "Checking SHA-256" -PercentComplete 50
             $actual = Get-FileHashSha256 -Path $tempPath
             if ($actual -ne $ExpectedHash) {
                 throw "Downloaded asset archive hash mismatch. Expected $ExpectedHash, got $actual."
             }
+            Complete-PackProgress -Activity "Verifying download"
         }
 
         Move-Item -LiteralPath $tempPath -Destination $DestinationPath -Force
@@ -170,6 +265,170 @@ function Invoke-DownloadWithHashCheck {
             Remove-Item -LiteralPath $tempPath -Force
         }
     }
+}
+
+function Expand-ZipArchiveWithProgress {
+    param(
+        [string]$ArchivePath,
+        [string]$DestinationPath,
+        [string]$Activity = "Extracting archive"
+    )
+
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    Ensure-Directory -Path $DestinationPath
+    $zip = [System.IO.Compression.ZipFile]::OpenRead($ArchivePath)
+    try {
+        $entries = @($zip.Entries)
+        $total = [Math]::Max(1, $entries.Count)
+        for ($index = 0; $index -lt $entries.Count; $index++) {
+            $entry = $entries[$index]
+            $percent = [int](($index * 100) / $total)
+            Write-PackProgress -Activity $Activity -Status $entry.FullName -PercentComplete $percent
+
+            $target = Join-Path $DestinationPath ($entry.FullName.Replace('/', [IO.Path]::DirectorySeparatorChar))
+            $resolvedDestination = [System.IO.Path]::GetFullPath($DestinationPath)
+            $resolvedTarget = [System.IO.Path]::GetFullPath($target)
+            if (-not $resolvedTarget.StartsWith($resolvedDestination, [StringComparison]::OrdinalIgnoreCase)) {
+                throw "Archive entry escapes destination: $($entry.FullName)"
+            }
+
+            if ($entry.FullName.EndsWith('/')) {
+                Ensure-Directory -Path $resolvedTarget
+                continue
+            }
+
+            $parent = Split-Path -Parent $resolvedTarget
+            if (-not [string]::IsNullOrWhiteSpace($parent)) {
+                Ensure-Directory -Path $parent
+            }
+            [System.IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $resolvedTarget, $true)
+        }
+    }
+    finally {
+        $zip.Dispose()
+        Complete-PackProgress -Activity $Activity
+    }
+}
+
+function Update-PackInstallerFromLatestRelease {
+    param([object]$Manifest)
+
+    if ([string]$env:FORGE_PACK_INSTALLER_SKIP_UPDATE -eq '1') {
+        return $false
+    }
+
+    $latest = $null
+    try {
+        Write-Step "Checking for pack updates"
+        $latest = Get-LatestGitHubRelease -Manifest $Manifest
+    }
+    catch {
+        Write-Warning "Could not check for pack updates: $($_.Exception.Message)"
+        return $false
+    }
+
+    if ($null -eq $latest) {
+        Write-Host "No GitHub release update source found."
+        return $false
+    }
+
+    $minimalAsset = @(
+        $latest.assets |
+            Where-Object { [string]$_.name -like 'minimal-pack-*.zip' } |
+            Sort-Object { [datetime]$_.updated_at } -Descending |
+            Select-Object -First 1
+    )
+    if ($null -eq $minimalAsset) {
+        Write-Host "Latest release '$($latest.tag_name)' has no minimal installer asset."
+        return $false
+    }
+
+    $statePath = Join-Path $UpdaterRoot 'last-update.json'
+    $state = $null
+    if (Test-Path -LiteralPath $statePath) {
+        try {
+            $state = Get-Content -LiteralPath $statePath -Raw | ConvertFrom-Json
+        }
+        catch {
+            $state = $null
+        }
+    }
+
+    $remoteDigest = [string]$minimalAsset.digest
+    if (
+        $null -ne $state -and
+        [string]$state.tag -eq [string]$latest.tag_name -and
+        [string]$state.asset -eq [string]$minimalAsset.name -and
+        [string]$state.digest -eq $remoteDigest
+    ) {
+        Write-Host "Pack installer is already current: $($latest.tag_name)"
+        return $false
+    }
+
+    Ensure-Directory -Path $UpdaterRoot
+    $downloadPath = Join-Path $UpdaterRoot ([string]$minimalAsset.name)
+    $expectedHash = ''
+    if ($remoteDigest.StartsWith('sha256:', [StringComparison]::OrdinalIgnoreCase)) {
+        $expectedHash = $remoteDigest.Substring('sha256:'.Length).ToLowerInvariant()
+    }
+
+    Write-Step "Downloading pack updater"
+    Invoke-DownloadWithHashCheck -Url ([string]$minimalAsset.browser_download_url) -DestinationPath $downloadPath -ExpectedHash $expectedHash
+
+    $extractPath = Join-Path $UpdaterRoot 'latest'
+    Remove-DirectoryIfPresent -Path $extractPath
+    Write-Step "Extracting pack updater"
+    Expand-ZipArchiveWithProgress -ArchivePath $downloadPath -DestinationPath $extractPath -Activity "Extracting pack updater"
+
+    $updated = $false
+    foreach ($relative in @(
+        'Install-Minecraft-Pack.bat',
+        'Install-Minecraft-Pack.ps1',
+        'Install-Forge-Server.sh',
+        'Install-Fabric-Server.sh',
+        'Install-CrazyCraft-Server.sh',
+        '.pack-manifest.json',
+        'README-INSTALL.txt'
+    )) {
+        $source = Join-Path $extractPath $relative
+        if (Test-Path -LiteralPath $source) {
+            Copy-Item -LiteralPath $source -Destination (Join-Path $PackRoot $relative) -Force
+            $updated = $true
+        }
+    }
+
+    [pscustomobject]@{
+        tag = [string]$latest.tag_name
+        asset = [string]$minimalAsset.name
+        digest = $remoteDigest
+        updatedAt = (Get-Date).ToUniversalTime().ToString('o')
+    } | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $statePath -Encoding UTF8
+
+    if ($updated) {
+        Write-Host "Updated portable installer files from release $($latest.tag_name)."
+    }
+    return $updated
+}
+
+function Restart-UpdatedInstaller {
+    $env:FORGE_PACK_INSTALLER_SKIP_UPDATE = '1'
+    $args = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $PSCommandPath)
+    foreach ($key in $InstallerBoundParameters.Keys) {
+        $value = $InstallerBoundParameters[$key]
+        if ($value -is [System.Management.Automation.SwitchParameter]) {
+            if ($value.IsPresent) {
+                $args += "-$key"
+            }
+        }
+        elseif ($null -ne $value) {
+            $args += "-$key"
+            $args += [string]$value
+        }
+    }
+
+    Write-Step "Restarting updated installer"
+    & powershell.exe @args
+    exit $LASTEXITCODE
 }
 
 function Get-ManifestAssetArchivePath {
@@ -245,7 +504,7 @@ function Ensure-AssetArchiveExtracted {
     Write-Host "Using asset archive: $archivePath"
     Remove-DirectoryIfPresent -Path $AssetExtractRoot
     Ensure-Directory -Path $AssetExtractRoot
-    Expand-Archive -LiteralPath $archivePath -DestinationPath $AssetExtractRoot -Force
+    Expand-ZipArchiveWithProgress -ArchivePath $archivePath -DestinationPath $AssetExtractRoot -Activity "Extracting pack assets"
     $expectedHash | Set-Content -LiteralPath $markerPath -Encoding ASCII
 }
 
@@ -331,12 +590,49 @@ function Get-ManifestForgeInstallerItem {
     return $item
 }
 
-function Get-PreferredJavaPath {
+function Test-Java17Path {
+    param([string]$Path)
+
+    if ([string]::IsNullOrWhiteSpace($Path) -or -not (Test-Path -LiteralPath $Path)) {
+        return $false
+    }
+
+    try {
+        $previousErrorActionPreference = $ErrorActionPreference
+        $ErrorActionPreference = 'Continue'
+        try {
+            $versionOutput = & $Path '-version' 2>&1
+        }
+        finally {
+            $ErrorActionPreference = $previousErrorActionPreference
+        }
+        if ($LASTEXITCODE -ne 0) {
+            return $false
+        }
+
+        $text = $versionOutput | Out-String
+        $match = [regex]::Match($text, 'version "?(?<major>\d+)')
+        if (-not $match.Success) {
+            return $false
+        }
+
+        return ([int]$match.Groups['major'].Value -ge 17)
+    }
+    catch {
+        return $false
+    }
+}
+
+function Get-JavaCandidatePaths {
     $candidates = [System.Collections.Generic.List[string]]::new()
 
-    $preferredRepoJava = Join-Path $PackRoot '_InstallCache\microsoft-jdk-17\jdk-17.0.19+10\bin\java.exe'
-    if (Test-Path -LiteralPath $preferredRepoJava) {
-        $candidates.Add($preferredRepoJava)
+    $portableJavaRoot = Join-Path $PackRoot '_InstallCache\microsoft-jdk-17'
+    if (Test-Path -LiteralPath $portableJavaRoot) {
+        foreach ($javaPath in Get-ChildItem -Path $portableJavaRoot -Recurse -Filter 'java.exe' -ErrorAction SilentlyContinue | Sort-Object LastWriteTimeUtc -Descending | Select-Object -ExpandProperty FullName) {
+            if (-not $candidates.Contains($javaPath)) {
+                $candidates.Add($javaPath)
+            }
+        }
     }
 
     foreach ($root in @(
@@ -357,35 +653,41 @@ function Get-PreferredJavaPath {
         }
     }
 
-    foreach ($candidate in $candidates) {
-        try {
-            $previousErrorActionPreference = $ErrorActionPreference
-            $ErrorActionPreference = 'Continue'
-            try {
-                $versionOutput = & $candidate '-version' 2>&1
-            }
-            finally {
-                $ErrorActionPreference = $previousErrorActionPreference
-            }
-            if ($LASTEXITCODE -ne 0) {
-                continue
-            }
+    @($candidates | Select-Object -Unique)
+}
 
-            $match = [regex]::Match(($versionOutput | Out-String), 'version "?(?<major>\d+)')
-            if (-not $match.Success) {
-                continue
-            }
+function Install-PortableJavaRuntime {
+    $javaRoot = Join-Path $PackRoot '_InstallCache\microsoft-jdk-17'
+    $zipPath = Join-Path $javaRoot 'microsoft-jdk-17-windows-x64.zip'
+    $javaUrl = 'https://aka.ms/download-jdk/microsoft-jdk-17-windows-x64.zip'
 
-            $major = [int]$match.Groups['major'].Value
-            if ($major -ge 17) {
-                return $candidate
-            }
-        }
-        catch {
+    Write-Step "Downloading portable Java 17"
+    Write-Host "No Java 17 runtime was found. Downloading a portable Microsoft OpenJDK 17 runtime."
+    Ensure-Directory -Path $javaRoot
+    Invoke-DownloadWithHashCheck -Url $javaUrl -DestinationPath $zipPath -ExpectedHash ''
+
+    Write-Step "Extracting portable Java 17"
+    $extractRoot = Join-Path $javaRoot 'runtime'
+    Remove-DirectoryIfPresent -Path $extractRoot
+    Expand-ZipArchiveWithProgress -ArchivePath $zipPath -DestinationPath $extractRoot -Activity "Extracting portable Java 17"
+
+    foreach ($candidate in Get-JavaCandidatePaths) {
+        if (Test-Java17Path -Path $candidate) {
+            return $candidate
         }
     }
 
-    throw "Could not find a Java runtime new enough to run the Forge installer. Install Java 17+ or keep the repo's bundled JDK cache."
+    throw "Downloaded portable Java 17, but no working java.exe was found after extraction."
+}
+
+function Get-PreferredJavaPath {
+    foreach ($candidate in Get-JavaCandidatePaths) {
+        if (Test-Java17Path -Path $candidate) {
+            return $candidate
+        }
+    }
+
+    return Install-PortableJavaRuntime
 }
 
 function Ensure-MinecraftBaseVersionMetadata {
@@ -599,7 +901,12 @@ function Copy-ManifestSectionTree {
     )
 
     Ensure-Directory -Path $Destination
-    foreach ($item in @($Manifest.$Section)) {
+    $items = @($Manifest.$Section)
+    $total = [Math]::Max(1, $items.Count)
+    for ($index = 0; $index -lt $items.Count; $index++) {
+        $item = $items[$index]
+        $percent = [int](($index * 100) / $total)
+        Write-PackProgress -Activity "Copying $Section files" -Status ([string]$item.name) -PercentComplete $percent
         $source = Resolve-ManifestItemSource -Manifest $Manifest -Item $item
         $relative = Get-ManifestItemRelativePath -Item $item -Section $Section
         $target = Join-Path $Destination $relative
@@ -609,6 +916,7 @@ function Copy-ManifestSectionTree {
         }
         Copy-Item -LiteralPath $source -Destination $target -Force
     }
+    Complete-PackProgress -Activity "Copying $Section files"
 }
 
 function Assert-ManifestSectionTree {
@@ -618,7 +926,12 @@ function Assert-ManifestSectionTree {
         [string]$Destination
     )
 
-    foreach ($item in @($Manifest.$Section)) {
+    $items = @($Manifest.$Section)
+    $total = [Math]::Max(1, $items.Count)
+    for ($index = 0; $index -lt $items.Count; $index++) {
+        $item = $items[$index]
+        $percent = [int](($index * 100) / $total)
+        Write-PackProgress -Activity "Verifying $Section files" -Status ([string]$item.name) -PercentComplete $percent
         $relative = Get-ManifestItemRelativePath -Item $item -Section $Section
         $target = Join-Path $Destination $relative
         if (-not (Test-Path -LiteralPath $target)) {
@@ -630,6 +943,7 @@ function Assert-ManifestSectionTree {
             throw "Installed hash mismatch for '$relative'. Expected $expected, got $actual."
         }
     }
+    Complete-PackProgress -Activity "Verifying $Section files"
 }
 
 function Write-ServerEntryNote {
@@ -733,9 +1047,17 @@ function Test-Install {
     Write-Host "Client verification passed: $ClientPath" -ForegroundColor Green
 }
 
-$manifest = Read-Manifest
 Write-Host "Forge 1.20.1 ProjectE chaos pack installer"
 Write-Host "Pack root: $PackRoot"
+$manifest = Read-Manifest
+
+if (-not $VerifyOnly) {
+    $updatedInstaller = Update-PackInstallerFromLatestRelease -Manifest $manifest
+    if ($updatedInstaller) {
+        Restart-UpdatedInstaller
+    }
+    $manifest = Read-Manifest
+}
 
 if ($VerifyOnly) {
     Test-Install -Manifest $manifest

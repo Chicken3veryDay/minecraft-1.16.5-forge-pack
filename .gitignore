@@ -3,6 +3,8 @@ server.properties
 .serena/
 _InstallCache/
 _DownloadCache/
+_pack-assets/
+_pack-updater/
 $
 __pycache__/
 *.pyc
