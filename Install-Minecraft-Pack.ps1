@@ -43,7 +43,8 @@ function Invoke-SelfUpdate {
     New-Item -ItemType Directory -Path $tempRoot -Force | Out-Null
     try {
         foreach ($relative in $files) {
-            $url = "$RepoRawBase/$relative"
+            $cacheBuster = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+            $url = "$RepoRawBase/$relative`?v=$cacheBuster"
             $local = Join-Path $PackRoot ($relative.Replace('/', [IO.Path]::DirectorySeparatorChar))
             $temp = Join-Path $tempRoot ($relative.Replace('/', [IO.Path]::DirectorySeparatorChar))
             New-Item -ItemType Directory -Path (Split-Path -Parent $temp) -Force | Out-Null
