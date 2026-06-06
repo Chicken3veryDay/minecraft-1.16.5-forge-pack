@@ -133,9 +133,11 @@ function Invoke-SelfUpdate {
     $files = @(
         'Install-Minecraft-Pack.ps1',
         'Install-Minecraft-Pack.bat',
+        'Fix-CrazyCraft-Client-QoL.bat',
         'tools/Install-CrazyCraft4.ps1',
         'tools/Repair-MinecraftLauncherAuth.ps1',
         'tools/Enable-CrazyCraftShaders.ps1',
+        'tools/Apply-CrazyCraftClientQol.ps1',
         'pack-sources/CrazyCraft4/mods.required.txt'
     )
     $updated = $false
@@ -186,6 +188,26 @@ function Ensure-RepairLauncherAuthScript {
     Invoke-WebRequest -UseBasicParsing -Uri $url -OutFile $local
     Write-StatusLine -Kind 'OK' -Message 'Launcher auth repair tool downloaded.'
     return $local
+}
+
+function Invoke-ClientQolHandshakeSync {
+    if (-not $Client) { return }
+    $qolScript = Join-Path $PackRoot 'tools\Apply-CrazyCraftClientQol.ps1'
+    if (-not (Test-Path -LiteralPath $qolScript)) {
+        Write-StatusLine -Kind 'WARN' -Message "Client QoL handshake sync helper not found at $qolScript. Run self-update or git pull."
+        return
+    }
+    $qolArgs = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $qolScript, '-Force')
+    if (-not [string]::IsNullOrWhiteSpace($ClientPath)) {
+        $qolArgs += '-ClientPath'
+        $qolArgs += $ClientPath
+    }
+    Write-StatusLine -Kind 'RUN' -Message 'Syncing QoL/server handshake jars into the client install.'
+    & powershell.exe @qolArgs
+    $qolExitCode = $LASTEXITCODE
+    if ($qolExitCode -ne 0) {
+        Write-StatusLine -Kind 'WARN' -Message "Client QoL handshake sync helper exited with code $qolExitCode."
+    }
 }
 
 if (-not $SkipSelfUpdate) {
@@ -247,6 +269,8 @@ if (-not [string]::IsNullOrWhiteSpace($ServerPath)) {
 $mainExitCode = $LASTEXITCODE
 
 if ($mainExitCode -eq 0 -and $Client) {
+    Invoke-ClientQolHandshakeSync
+
     $shaderScript = Join-Path $PackRoot 'tools\Enable-CrazyCraftShaders.ps1'
     if (Test-Path -LiteralPath $shaderScript) {
         $shaderArgs = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $shaderScript, '-Client')
