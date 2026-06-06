@@ -1,65 +1,49 @@
 # Operations Notes
 
-These notes keep non-secret server details available for future Codex threads working in this repo.
+These notes define the runtime posture for the Forge `1.20.1` private friend-server pack. They no longer describe the Fabric scaffold as the production baseline.
 
-## Minecraft Server
+## Target Runtime
 
-- Public Minecraft endpoint: `192.3.179.150:25565`
-- Pack: Crazy Craft Updated `0.12.9`
-- Minecraft: `1.16.5`
-- Forge: `36.2.35`
-- Server install path on VPS: `/opt/minecraft/server`
-- systemd service: `minecraft`
-- Server log path: `/opt/minecraft/server/logs/latest.log`
-- Server properties path: `/opt/minecraft/server/server.properties`
-- Current MOTD after migration: `Crazy Craft Updated 0.12.9`
-- Fresh world seed after migration: `4996086032965686551`
-- Pre-migration safety backup: `/opt/minecraft/server-backups/pre-crazycraft-20260604-013948/server.tar.gz`
+- Minecraft target: `1.20.1`
+- Loader default: `Forge`
+- World policy: fresh world
+- Audience: private friends
+- Planning envelope: `12-16 GB` host RAM, `6` fast CPU cores, Linux + NVMe
+- Starting dedicated-server JVM target: `-Xms4G -Xmx8G`
 
-## Source Artifacts
+The currently shown Ubuntu `24.04` VPS with `4 GB` RAM is below the intended envelope for this content mix. It may be usable only for a reduced pack or as a temporary validation surface.
 
-- CurseForge project: <https://www.curseforge.com/minecraft/modpacks/crazy-craft-updated>
-- Client pack file ID `8069957`, SHA-256 `6940b0862291366a0f5d102f5dc1dc9e64dcedbb72024ff26bed0b867ca9fe1b`
-- Server pack file ID `8070007`, SHA-256 `0c7b14464dd659f2d11166822b146f2ab755d3992b4fb0ea029bd1a097991ad3`
-- Official server start command from `start.bat`: `java -Xmx8192M -Xms8192M -jar forge.jar nogui`
-- VPS server launch command: `java -Xms1G -Xmx2816M -XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200 -XX:+DisableExplicitGC -jar forge.jar nogui`
-- Runtime stability adjustment on 2026-06-04: FTB Backups automatic backups disabled in `config/ftbbackups-common.toml` to avoid backup work during player joins on the 4 GB VPS. Manual server backups should still be taken before destructive operations.
+## Required Baseline Mods And Tools
 
-## VPS Access
+- `ProjectE`
+- `spark`
+- `ModernFix`
+- `FerriteCore`
+- `Chunky`
+- `Clumps`
 
-- SSH target: `root@192.3.179.150:22`
-- Do not commit the VPS password, RCON password, or live `server.properties`.
-- Prefer `tools/ssh_ops.py` with a secure prompt wrapper. Do not pass secrets inline or through command-line environment setup.
+Client-side optional performance surfaces include `Embeddium`, `Entity Culling`, and `ImmediatelyFast`. They are not copied into the dedicated server payload.
 
-## Migration Runbook
+## Deployment Model
 
-1. Verify SSH access.
-2. Run read-only preflight:
-   `python tools/ssh_ops.py 192.3.179.150 -u root --password-env CODEX_SSH_PASSWORD exec --command-file tools/remote_preflight_crazycraft.sh`
-3. Stop `minecraft` and create a timestamped backup before destructive changes.
-4. Wipe old world folders and previous pack folders.
-5. Install the official Crazy Craft Updated server pack.
-6. Preserve important `server.properties` choices such as `server-ip`, `server-port`, `online-mode`, RCON, whitelist, difficulty, and gamemode.
-7. Clear `level-seed` before first startup so the map regenerates.
-8. Start `minecraft`, wait for a fresh `Done (...)! For help` log line, record the generated seed, and ping `192.3.179.150:25565`.
+1. Resolve public mod jars with `tools/Resolve-ForgePack.ps1`.
+2. Build release artifacts from `pack-sources/`.
+3. Stage the client with `Install-Minecraft-Pack.ps1`.
+4. Stage the server with `Install-Forge-Server.sh` or `Install-Minecraft-Pack.ps1 -Server`.
+5. Run the bundled Forge installer in the staged server directory before first boot if the launcher files do not already exist.
+6. Pregenerate likely early-game dimensions before normal play.
+7. Use `spark` during local or remote validation to capture startup and join behavior.
 
-The local migration helper for the current VPS is:
+## Governance Rules
 
-`tools/remote_install_crazycraft.sh`
+- Keep chunk loaders, villager-heavy bases, and permanently active mob farms under explicit friend-group rules.
+- Treat aggressive exploration and boss farming as operational load, not just gameplay flavor.
+- Prefer pregeneration and simulation-distance discipline before trying to solve everything with more RAM.
 
-The release-side Linux installer is:
+## Fresh-World Policy
 
-`Install-CrazyCraft-Server.sh`
+This project does not assume migration of the old Crazy Craft world. Any live cutover or remote/server-touching work still requires explicit approval first, as captured in [CONTROL.md](C:\Users\micha\Desktop\Mods\CONTROL.md).
 
-It installs from the GitHub Release `pack-assets` archive rather than from ForgeCDN.
+## Deferred Legacy Surfaces
 
-## Optimization Notes
-
-Crazy Craft Updated already includes several optimization/stability mods for 1.16.5 Forge, including ModernFix, FerriteCore, AI Improvements, Clumps, Connectivity, MemoryLeakFix, PacketFixer, Performant, FastWorkbench, FastFurnace, and FastAsyncWorldSave. Do not add unrelated content mods. Add more optimization mods only after verifying exact 1.16.5 Forge compatibility and server startup.
-
-## Brandon Windows Client
-
-- SSH target: `brandon@100.86.27.44:22`
-- SSH key on Michael's machine: `C:\Users\micha\.ssh\brandon_admin_ed25519`
-- Remote repair/update helper: `tools\Repair-RemoteWindowsMinecraftClient.ps1`
-- Only update Brandon's client after the GitHub release and repo push are complete.
+The repo still contains Crazy Craft-specific remote scripts and Fabric-named wrappers. They are intentionally deprecated leftovers, not the default path for this pack.

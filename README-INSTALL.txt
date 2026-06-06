@@ -1,71 +1,77 @@
-Crazy Craft Updated 0.12.9 installer
-====================================
+Forge 1.20.1 ProjectE chaos pack installer
+==========================================
 
-Pack:
-- Minecraft 1.16.5
-- Forge 36.2.35
-- Launcher profile: Crazy Craft Updated Forge
-- Server entry: Crazy Craft Updated - 192.3.179.150:25565
+Target assumptions
+------------------
 
-Client install on Windows
--------------------------
+- Minecraft: `1.20.1`
+- Loader: `Forge`
+- World policy: fresh world
+- Audience: private friends
+- Pack identity: `ProjectE` + hard adventure chaos
+- Host target: dedicated Linux with NVMe
+- Planning target: `12-16 GB` RAM, `6` fast CPU cores
+- Starting dedicated-server JVM target: `-Xms4G -Xmx8G`
 
-1. Extract the minimal-pack zip from the GitHub Release.
-2. Double-click Install-Minecraft-Pack.bat.
-3. Let the installer download and verify pack-assets from the release.
-4. The installer will install Forge 1.16.5-36.2.35, configure 8G max / 4G min launcher memory, back up old mods/configs/defaultconfigs/kubejs, copy the Crazy Craft client files, and add the multiplayer server entry.
-5. Open Minecraft Launcher and launch:
+Windows client staging
+----------------------
 
-   Crazy Craft Updated Forge
-   1.16.5-forge-36.2.35
+1. Extract the `minimal-pack` zip from the release.
+2. Run `Install-Minecraft-Pack.bat` or:
 
-Verify an existing client without reinstalling:
+   `powershell -NoProfile -ExecutionPolicy Bypass -File .\Install-Minecraft-Pack.ps1`
 
-  powershell -NoProfile -ExecutionPolicy Bypass -File .\Install-Minecraft-Pack.ps1 -VerifyOnly
+3. The installer stages the client files into a dedicated instance directory, installs Forge `1.20.1-47.2.32` into the Minecraft Launcher root, verifies hashes from `.pack-manifest.json`, and writes a connection note if a multiplayer endpoint is provided.
+4. The installer also creates or updates a launcher profile for this pack and points it at:
 
-Install without shaderpacks:
+   `%APPDATA%\.minecraft\forge-projecte-chaos-1.20.1`
 
-  powershell -NoProfile -ExecutionPolicy Bypass -File .\Install-Minecraft-Pack.ps1 -NoShader
+Useful flags:
 
-Override launcher memory:
+- Verify only:
 
-  powershell -NoProfile -ExecutionPolicy Bypass -File .\Install-Minecraft-Pack.ps1 -ClientMemoryMax 10G -ClientMemoryMin 4G
+  `powershell -NoProfile -ExecutionPolicy Bypass -File .\Install-Minecraft-Pack.ps1 -VerifyOnly`
 
-Linux server install
+- Stage to a custom directory:
+
+  `powershell -NoProfile -ExecutionPolicy Bypass -File .\Install-Minecraft-Pack.ps1 -ClientPath D:\Minecraft\forge-projecte-chaos-1.20.1`
+
+- Stage only the server payload:
+
+  `powershell -NoProfile -ExecutionPolicy Bypass -File .\Install-Minecraft-Pack.ps1 -Server -ServerPath D:\Minecraft\forge-projecte-chaos-server`
+
+Linux server staging
 --------------------
 
-The minimal-pack zip includes Install-CrazyCraft-Server.sh. Run it from the extracted minimal-pack folder on the server:
+The minimal-pack zip includes `Install-Forge-Server.sh`. Run it from the extracted folder on the host:
 
-  chmod +x ./Install-CrazyCraft-Server.sh
-  sudo ./Install-CrazyCraft-Server.sh
+  chmod +x ./Install-Forge-Server.sh
+  sudo ./Install-Forge-Server.sh
 
 Defaults:
-- SERVER_DIR=/opt/minecraft/server
-- SERVICE_NAME=minecraft
-- WIPE_WORLD=1
-- START_SERVICE=1
-- JAVA_ARGS="-Xms1G -Xmx2816M -XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200 -XX:+DisableExplicitGC"
+
+- `SERVER_DIR=/opt/minecraft/server`
+- `SERVICE_NAME=minecraft`
+- `WIPE_WORLD=1`
+- `START_SERVICE=1`
+- `JAVA_ARGS="-Xms4G -Xmx8G -XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200 -XX:+DisableExplicitGC"`
 
 Override example:
 
-  sudo SERVER_DIR=/srv/minecraft SERVICE_NAME=crazycraft WIPE_WORLD=0 ./Install-CrazyCraft-Server.sh
+  sudo SERVER_DIR=/srv/minecraft/projecte-chaos SERVICE_NAME=projecte-chaos WIPE_WORLD=0 ./Install-Forge-Server.sh
 
-The script downloads pack-assets from the GitHub Release URL in .pack-manifest.json, verifies SHA-256, backs up the existing server, removes old pack files, copies the release Server payload, accepts eula.txt, clears level-seed, writes start-server.sh, updates systemd when run as root, and starts the service unless START_SERVICE=0.
+The script stages the server payload, copies shared/server mods, preserves selected `server.properties` keys when possible, clears `level-seed` for a fresh world, runs the bundled Forge installer when Java is available, and writes `start-server.sh`.
 
-Manual server launch command:
+Operational expectations
+------------------------
 
-  cd /opt/minecraft/server
-  java -Xms1G -Xmx2816M -XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200 -XX:+DisableExplicitGC -jar forge.jar nogui
-
-Release source hashes
----------------------
-
-- Client CurseForge pack file ID 8069957:
-  6940b0862291366a0f5d102f5dc1dc9e64dcedbb72024ff26bed0b867ca9fe1b
-- Server pack file ID 8070007:
-  0c7b14464dd659f2d11166822b146f2ab755d3992b4fb0ea029bd1a097991ad3
+- `ProjectE` is part of the pack identity.
+- Dimensions, bosses, and worldgen content make pregeneration strongly recommended before inviting players.
+- `spark`, `ModernFix`, `FerriteCore`, `Chunky`, and `Clumps` are part of the lightweight reliability baseline.
+- Do not reuse the old Forge `1.16.5` world.
+- Do not expect a `4 GB` VPS to be comfortable for this pack without reducing the content set.
 
 Notes
 -----
 
-The client payload is built from the exact CurseForge manifest file IDs. The server payload is the official Crazy Craft Updated server pack with `enhanced_boss_bars` removed because it loads client-only Minecraft classes on a dedicated server. Optimization/stability mods already included by the pack include ModernFix, FerriteCore, AI Improvements, Clumps, Connectivity, MemoryLeakFix, PacketFixer, Performant, FastWorkbench, FastFurnace, and FastAsyncWorldSave.
+This repo intentionally defaults to a Forge `1.20.1` friends-only adventure pack. The Fabric-named wrappers remain only as compatibility redirects to the Forge installer path.

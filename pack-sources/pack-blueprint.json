@@ -1,0 +1,2027 @@
+﻿{
+    "packName":  "Forge 1.20.1 ProjectE Chaos Pack",
+    "packSlug":  "forge-projecte-chaos-pack",
+    "minecraft":  "1.20.1",
+    "platform":  "Forge",
+    "forgeVersion":  "47.4.0",
+    "worldPolicy":  "fresh",
+    "audience":  "private friends",
+    "contentStrategy":  "ProjectE-centered chaotic adventure",
+    "requiredIdentity":  "ProjectE",
+    "disallowedPackPillars":  [
+                                  "Create",
+                                  "Mekanism",
+                                  "Applied Energistics",
+                                  "Refined Storage"
+                              ],
+    "hostProfile":  {
+                        "players":  "4-10",
+                        "hostRam":  "12-16 GB",
+                        "recommendedXmx":  "8G",
+                        "cpu":  "6 fast cores",
+                        "storage":  "Linux NVMe"
+                    },
+    "sourceWorkflow":  {
+                           "resolver":  "CurseForge API via curse.tools",
+                           "reason":  "The repo already has a public-source downloader pattern, while packwiz is not installed in this workspace."
+                       },
+    "optimizationBaseline":  [
+                                 {
+                                     "name":  "spark",
+                                     "side":  "shared",
+                                     "status":  "required",
+                                     "purpose":  "profiling and verification"
+                                 },
+                                 {
+                                     "name":  "ModernFix",
+                                     "side":  "shared",
+                                     "status":  "required",
+                                     "purpose":  "startup and memory pressure reduction"
+                                 },
+                                 {
+                                     "name":  "FerriteCore",
+                                     "side":  "shared",
+                                     "status":  "required",
+                                     "purpose":  "heap reduction"
+                                 },
+                                 {
+                                     "name":  "Chunky",
+                                     "side":  "server",
+                                     "status":  "required",
+                                     "purpose":  "pregeneration"
+                                 }
+                             ],
+    "contentPillars":  [
+                           {
+                               "category":  "Exchange progression",
+                               "direction":  "required",
+                               "notes":  "ProjectE is the progression identity."
+                           },
+                           {
+                               "category":  "Bosses and creatures",
+                               "direction":  "heavy",
+                               "notes":  "Prioritize dangerous mobs, boss encounters, and difficult combat."
+                           },
+                           {
+                               "category":  "Dungeons and structures",
+                               "direction":  "heavy",
+                               "notes":  "Prefer large public Forge 1.20.1 structure mods."
+                           },
+                           {
+                               "category":  "Dimensions and exploration",
+                               "direction":  "heavy",
+                               "notes":  "Multiple destination dimensions are expected."
+                           },
+                           {
+                               "category":  "QoL and performance",
+                               "direction":  "lightweight",
+                               "notes":  "Keep the pack practical for a friends-only server."
+                           }
+                       ],
+    "modSeeds":  [
+                     {
+                         "name":  "ProjectE",
+                         "slug":  "projecte",
+                         "side":  "shared",
+                         "category":  "exchange",
+                         "required":  true,
+                         "role":  "required progression identity"
+                     },
+                     {
+                         "name":  "Alex\u0027s Mobs",
+                         "slug":  "alexs-mobs",
+                         "side":  "shared",
+                         "category":  "mobs",
+                         "required":  true,
+                         "role":  "creatures and combat variety"
+                     },
+                     {
+                         "name":  "Citadel",
+                         "slug":  "citadel",
+                         "side":  "shared",
+                         "category":  "mobs",
+                         "required":  true,
+                         "role":  "Alex\u0027s Mobs dependency pinned explicitly for server compatibility"
+                     },
+                     {
+                         "name":  "Mowzie\u0027s Mobs",
+                         "slug":  "mowzies-mobs",
+                         "side":  "shared",
+                         "category":  "bosses",
+                         "required":  true,
+                         "role":  "boss encounters and hostile mobs"
+                     },
+                     {
+                         "name":  "L_Ender\u0027s Cataclysm",
+                         "slug":  "lendercataclysm",
+                         "side":  "shared",
+                         "category":  "bosses",
+                         "required":  true,
+                         "role":  "raid-scale bosses and dangerous structures"
+                     },
+                     {
+                         "name":  "The Twilight Forest",
+                         "slug":  "the-twilight-forest",
+                         "side":  "shared",
+                         "category":  "dimensions",
+                         "required":  true,
+                         "role":  "major adventure dimension"
+                     },
+                     {
+                         "name":  "Blue Skies",
+                         "slug":  "blue-skies",
+                         "side":  "shared",
+                         "category":  "dimensions",
+                         "required":  true,
+                         "role":  "additional dimensions and bosses"
+                     },
+                     {
+                         "name":  "The Bumblezone",
+                         "slug":  "the-bumblezone-forge",
+                         "side":  "shared",
+                         "category":  "dimensions",
+                         "required":  true,
+                         "role":  "hostile dimension exploration"
+                     },
+                     {
+                         "name":  "When Dungeons Arise",
+                         "slug":  "when-dungeons-arise",
+                         "side":  "shared",
+                         "category":  "structures",
+                         "required":  true,
+                         "role":  "large exploration structures"
+                     },
+                     {
+                         "name":  "YUNG\u0027s API",
+                         "slug":  "yungs-api",
+                         "side":  "shared",
+                         "category":  "structures",
+                         "required":  true,
+                         "role":  "dependency base for YUNG structure mods"
+                     },
+                     {
+                         "name":  "YUNG\u0027s Better Dungeons",
+                         "slug":  "yungs-better-dungeons",
+                         "side":  "shared",
+                         "category":  "dungeons",
+                         "required":  true,
+                         "role":  "more substantial dungeons"
+                     },
+                     {
+                         "name":  "YUNG\u0027s Better Strongholds",
+                         "slug":  "yungs-better-strongholds",
+                         "side":  "shared",
+                         "category":  "dungeons",
+                         "required":  true,
+                         "role":  "improved strongholds"
+                     },
+                     {
+                         "name":  "Repurposed Structures",
+                         "slug":  "repurposed-structures",
+                         "side":  "shared",
+                         "category":  "structures",
+                         "required":  true,
+                         "role":  "overworld and dimension structure density"
+                     },
+                     {
+                         "name":  "Dungeon Crawl",
+                         "slug":  "dungeon-crawl",
+                         "side":  "shared",
+                         "category":  "dungeons",
+                         "required":  true,
+                         "role":  "additional dungeon generation"
+                     },
+                     {
+                         "name":  "Born in Chaos",
+                         "slug":  "born-in-chaos",
+                         "side":  "shared",
+                         "category":  "mobs",
+                         "required":  true,
+                         "role":  "OreSpawn-like hostile mobs, mini-bosses, gear, and chaotic encounters"
+                     },
+                     {
+                         "name":  "Advent of Ascension",
+                         "slug":  "advent-of-ascension-nevermine",
+                         "side":  "shared",
+                         "category":  "dimensions",
+                         "required":  true,
+                         "role":  "large old-school adventure expansion with bosses, dimensions, mobs, and loot"
+                     },
+                     {
+                         "name":  "Iron\u0027s Spells \u0027n Spellbooks",
+                         "slug":  "irons-spells-n-spellbooks",
+                         "side":  "shared",
+                         "category":  "weapons",
+                         "required":  true,
+                         "role":  "active spell weapons, spell loot, progression gear, and magical combat"
+                     },
+                     {
+                         "name":  "Apotheosis",
+                         "slug":  "apotheosis",
+                         "side":  "shared",
+                         "category":  "loot",
+                         "required":  true,
+                         "role":  "boss-style affix mobs, gem systems, stronger loot, and deeper enchantment progression"
+                     },
+                     {
+                         "name":  "Artifacts",
+                         "slug":  "artifacts",
+                         "side":  "shared",
+                         "category":  "accessories",
+                         "required":  true,
+                         "role":  "Terraria-like accessories with active and gameplay-changing effects"
+                     },
+                     {
+                         "name":  "Alex\u0027s Caves",
+                         "slug":  "alexs-caves",
+                         "side":  "shared",
+                         "category":  "mobs",
+                         "required":  true,
+                         "role":  "large exploration biomes with dangerous mobs, set-piece loot, and adventure gear"
+                     },
+                     {
+                         "name":  "The Graveyard",
+                         "slug":  "the-graveyard-forge",
+                         "side":  "shared",
+                         "category":  "mobs",
+                         "required":  true,
+                         "role":  "undead mobs, graveyard structures, bosses, and spooky exploration loot"
+                     },
+                     {
+                         "name":  "Mutant Monsters",
+                         "slug":  "mutant-monsters",
+                         "side":  "shared",
+                         "category":  "bosses",
+                         "required":  true,
+                         "role":  "boss-like mutant vanilla mobs with unique drops and combat encounters"
+                     },
+                     {
+                         "name":  "Illager Invasion",
+                         "slug":  "illager-invasion",
+                         "side":  "shared",
+                         "category":  "mobs",
+                         "required":  true,
+                         "role":  "expanded hostile illagers and raid-style combat variety"
+                     },
+                     {
+                         "name":  "It Takes a Pillage",
+                         "slug":  "it-takes-a-pillage",
+                         "side":  "shared",
+                         "category":  "structures",
+                         "required":  true,
+                         "role":  "pillager camps, patrol structures, hostile encounters, and loot"
+                     },
+                     {
+                         "name":  "Dungeon Now Loading 2%",
+                         "slug":  "dungeon-now-loading",
+                         "side":  "shared",
+                         "category":  "dungeons",
+                         "required":  true,
+                         "role":  "additional dungeon structures and exploration rewards"
+                     },
+                     {
+                         "name":  "When Dungeons Arise - Seven Seas",
+                         "slug":  "when-dungeons-arise-seven-seas",
+                         "side":  "shared",
+                         "category":  "structures",
+                         "required":  true,
+                         "role":  "large ocean structures and sea adventure loot"
+                     },
+                     {
+                         "name":  "Deeper and Darker",
+                         "slug":  "deeperdarker",
+                         "side":  "shared",
+                         "category":  "dimensions",
+                         "required":  true,
+                         "role":  "deep dark adventure dimension with mobs, structures, and boss progression"
+                     },
+                     {
+                         "name":  "The Undergarden",
+                         "slug":  "the-undergarden",
+                         "side":  "shared",
+                         "category":  "dimensions",
+                         "required":  true,
+                         "role":  "underground dimension with hostile mobs, loot, and exploration progression"
+                     },
+                     {
+                         "name":  "Corail Tombstone",
+                         "slug":  "corail-tombstone",
+                         "side":  "shared",
+                         "category":  "qol",
+                         "required":  true,
+                         "role":  "death recovery"
+                     },
+                     {
+                         "name":  "Waystones",
+                         "slug":  "waystones",
+                         "side":  "shared",
+                         "category":  "qol",
+                         "required":  true,
+                         "role":  "travel and regrouping"
+                     },
+                     {
+                         "name":  "Simple Voice Chat",
+                         "slug":  "simple-voice-chat",
+                         "side":  "shared",
+                         "category":  "qol",
+                         "required":  false,
+                         "role":  "social feature"
+                     },
+                     {
+                         "name":  "Just Enough Items",
+                         "slug":  "jei",
+                         "side":  "client",
+                         "category":  "client-qol",
+                         "required":  true,
+                         "role":  "recipe browsing"
+                     },
+                     {
+                         "name":  "Jade",
+                         "slug":  "jade",
+                         "side":  "client",
+                         "category":  "client-qol",
+                         "required":  true,
+                         "role":  "block and entity tooltips"
+                     },
+                     {
+                         "name":  "AppleSkin",
+                         "slug":  "appleskin",
+                         "side":  "client",
+                         "category":  "client-qol",
+                         "required":  true,
+                         "role":  "food value HUD"
+                     },
+                     {
+                         "name":  "Xaero\u0027s Minimap",
+                         "slug":  "xaeros-minimap",
+                         "side":  "client",
+                         "category":  "client-qol",
+                         "required":  true,
+                         "role":  "navigation"
+                     },
+                     {
+                         "name":  "Xaero\u0027s World Map",
+                         "slug":  "xaeros-world-map",
+                         "side":  "client",
+                         "category":  "client-qol",
+                         "required":  true,
+                         "role":  "full map"
+                     },
+                     {
+                         "name":  "Embeddium",
+                         "slug":  "embeddium",
+                         "side":  "client",
+                         "category":  "client-performance",
+                         "required":  true,
+                         "role":  "render performance"
+                     },
+                     {
+                         "name":  "Entity Culling",
+                         "slug":  "entityculling",
+                         "side":  "client",
+                         "category":  "client-performance",
+                         "required":  true,
+                         "role":  "visibility culling"
+                     },
+                     {
+                         "name":  "ImmediatelyFast",
+                         "slug":  "immediatelyfast",
+                         "side":  "client",
+                         "category":  "client-performance",
+                         "required":  true,
+                         "role":  "UI and rendering optimization"
+                     },
+                     {
+                         "name":  "FerriteCore",
+                         "slug":  "ferritecore",
+                         "side":  "shared",
+                         "category":  "performance",
+                         "required":  true,
+                         "role":  "memory reduction"
+                     },
+                     {
+                         "name":  "ModernFix",
+                         "slug":  "modernfix",
+                         "side":  "shared",
+                         "category":  "performance",
+                         "required":  true,
+                         "role":  "startup and memory fixes"
+                     },
+                     {
+                         "name":  "spark",
+                         "slug":  "spark",
+                         "side":  "shared",
+                         "category":  "performance",
+                         "required":  true,
+                         "role":  "profiling"
+                     },
+                     {
+                         "name":  "Chunky",
+                         "slug":  "chunky-pregenerator-forge",
+                         "side":  "server",
+                         "category":  "performance",
+                         "required":  true,
+                         "role":  "pregeneration"
+                     },
+                     {
+                         "name":  "Clumps",
+                         "slug":  "clumps",
+                         "side":  "shared",
+                         "category":  "performance",
+                         "required":  true,
+                         "role":  "XP orb consolidation"
+                     }
+                 ],
+    "resolvedMods":  [
+                         {
+                             "name":  "Architectury API",
+                             "slug":  "architectury-api",
+                             "projectId":  419699,
+                             "fileName":  "architectury-9.2.14-forge.jar",
+                             "fileDate":  "2024-02-26T13:18:59.227Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "[Forge 1.20(.1)] v9.2.14",
+                             "modIds":  [
+                                            "architectury"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "accessories",
+                             "role":  "dependency",
+                             "required":  true,
+                             "dependencyOf":  "Artifacts",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/5137/938/architectury-9.2.14-forge.jar",
+                             "sha256":  "218b471d0b8a1f6cda14cfc1beb9eeb0df54304500acc6c5613d9b88ec65d9af",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "Artifacts",
+                             "slug":  "artifacts",
+                             "projectId":  312353,
+                             "fileName":  "artifacts-forge-9.5.19.jar",
+                             "fileDate":  "2026-04-10T09:21:47.417Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "artifacts-forge-9.5.19.jar",
+                             "modIds":  [
+                                            "artifacts"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "accessories",
+                             "role":  "Terraria-like accessories with active and gameplay-changing effects",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/7903/806/artifacts-forge-9.5.19.jar",
+                             "sha256":  "f1e4dc786866b6e4f2a48142f2acf63bb9bee54ac2f31621ad5d8f18ab54c7b0",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "Cloth Config API (Fabric/Forge/NeoForge)",
+                             "slug":  "cloth-config",
+                             "projectId":  348521,
+                             "fileName":  "cloth-config-11.1.136-forge.jar",
+                             "fileDate":  "2024-09-16T17:13:48.94Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "[Forge 1.20(.1)] v11.1.136",
+                             "modIds":  [
+                                            "cloth_config"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "accessories",
+                             "role":  "dependency",
+                             "required":  true,
+                             "dependencyOf":  "Artifacts",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/5729/105/cloth-config-11.1.136-forge.jar",
+                             "sha256":  "1e895e85cf5b1e1905ef3178ec155c8badfe22a1577b92c09143a5aa1f4ce0f2",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "Curios API (Forge/NeoForge)",
+                             "slug":  "curios",
+                             "projectId":  309927,
+                             "fileName":  "curios-forge-5.14.1+1.20.1.jar",
+                             "fileDate":  "2025-04-13T13:09:30.85Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "curios-forge-5.14.1+1.20.1.jar",
+                             "modIds":  [
+                                            "curios"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "bosses",
+                             "role":  "dependency",
+                             "required":  true,
+                             "dependencyOf":  "L_Ender \u0027s Cataclysm",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/6418/456/curios-forge-5.14.1%2b1.20.1.jar",
+                             "sha256":  "1e817919a35b37cf30524aaec73f0ca5130452f23f168f844854df282eb8e51f",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "GeckoLib",
+                             "slug":  "geckolib",
+                             "projectId":  388172,
+                             "fileName":  "geckolib-forge-1.20.1-4.8.3.jar",
+                             "fileDate":  "2026-01-31T01:40:51.33Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "geckolib-forge-1.20.1-4.8.3.jar",
+                             "modIds":  [
+                                            "geckolib"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "bosses",
+                             "role":  "dependency",
+                             "required":  true,
+                             "dependencyOf":  "Mowzie\u0027s Mobs",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/7553/267/geckolib-forge-1.20.1-4.8.3.jar",
+                             "sha256":  "8b90e11871a58b63816e99c529e6c932bc88e6beb3fec97ad618e22217df3250",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "L_Ender \u0027s Cataclysm",
+                             "slug":  "lendercataclysm",
+                             "projectId":  551586,
+                             "fileName":  "L_Enders_Cataclysm-3.29.jar",
+                             "fileDate":  "2026-06-03T23:40:48.753Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "L_Enders_Cataclysm-3.29.jar",
+                             "modIds":  [
+                                            "cataclysm"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "bosses",
+                             "role":  "raid-scale bosses and dangerous structures",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/8193/609/L_Enders_Cataclysm-3.29.jar",
+                             "sha256":  "345c320ada178145e74de79cff48ef6ee6fe7039872111c2df1cd4f86b301873",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "Lionfish API",
+                             "slug":  "lionfish-api",
+                             "projectId":  1001614,
+                             "fileName":  "lionfishapi-3.0.jar",
+                             "fileDate":  "2026-05-15T21:48:23.623Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "lionfishapi-3.0.jar",
+                             "modIds":  [
+                                            "lionfishapi"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "bosses",
+                             "role":  "dependency",
+                             "required":  true,
+                             "dependencyOf":  "L_Ender \u0027s Cataclysm",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/8095/554/lionfishapi-3.0.jar",
+                             "sha256":  "d2fdaf7e9bc53fde7da4a86ab17018a3ed6c16fc2d46de5054e5a83e2bef7871",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "Mowzie\u0027s Mobs",
+                             "slug":  "mowzies-mobs",
+                             "projectId":  250498,
+                             "fileName":  "mowziesmobs-1.8.2.jar",
+                             "fileDate":  "2026-03-26T07:14:45.517Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "Mowzie\u0027s Mobs - 1.8.2 (1.20.1)",
+                             "modIds":  [
+                                            "mowziesmobs"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "bosses",
+                             "role":  "boss encounters and hostile mobs",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/7815/705/mowziesmobs-1.8.2.jar",
+                             "sha256":  "e8ce1768cda6f1e1fadd2321c92921b473bd0cee45ba4b8387fb30f8326cb31c",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "Mutant Monsters",
+                             "slug":  "mutant-monsters",
+                             "projectId":  852665,
+                             "fileName":  "MutantMonsters-v8.0.8-1.20.1-Forge.jar",
+                             "fileDate":  "2025-11-17T14:04:40.967Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "[FORGE] [1.20.1] MutantMonsters-v8.0.8",
+                             "modIds":  [
+                                            "mutantmonsters"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "bosses",
+                             "role":  "boss-like mutant vanilla mobs with unique drops and combat encounters",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/7232/503/MutantMonsters-v8.0.8-1.20.1-Forge.jar",
+                             "sha256":  "9a1835dd388a04c37acb1384e7c39650804103b3dd9d4b3910fd49022d18a4bf",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "Puzzles Lib",
+                             "slug":  "puzzles-lib",
+                             "projectId":  495476,
+                             "fileName":  "PuzzlesLib-v8.1.33-1.20.1-Forge.jar",
+                             "fileDate":  "2025-08-23T12:27:32.2Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "[FORGE] [1.20.1] PuzzlesLib-v8.1.33",
+                             "modIds":  [
+                                            "puzzleslib"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "bosses",
+                             "role":  "dependency",
+                             "required":  true,
+                             "dependencyOf":  "Mutant Monsters",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/6918/565/PuzzlesLib-v8.1.33-1.20.1-Forge.jar",
+                             "sha256":  "f3077a9f817629b8e8929c1951042d1a1adc62d30b72adebd54d2b074a4faf4f",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "Embeddium",
+                             "slug":  "embeddium",
+                             "projectId":  908741,
+                             "fileName":  "embeddium-0.3.31+mc1.20.1.jar",
+                             "fileDate":  "2024-08-31T23:11:49.24Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "[1.20.1] Embeddium 0.3.31",
+                             "modIds":  [
+                                            "embeddium",
+                                            "rubidium"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client"
+                                                ],
+                             "installedSides":  [
+                                                    "Client"
+                                                ],
+                             "category":  "client-performance",
+                             "role":  "render performance",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/5681/725/embeddium-0.3.31%2bmc1.20.1.jar",
+                             "sha256":  "eed3d1325f2acc2fd4e69bb495e5ccb91d962126ac5330f0582ebc2a3daf47fb",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "Entity Culling Fabric/Forge",
+                             "slug":  "entityculling",
+                             "projectId":  448233,
+                             "fileName":  "entityculling-forge-1.10.2-mc1.20.1.jar",
+                             "fileDate":  "2026-05-07T17:01:55.973Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "1.10.2-1.20.1 - Forge",
+                             "modIds":  [
+                                            "entityculling"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client"
+                                                ],
+                             "installedSides":  [
+                                                    "Client"
+                                                ],
+                             "category":  "client-performance",
+                             "role":  "visibility culling",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/8053/757/entityculling-forge-1.10.2-mc1.20.1.jar",
+                             "sha256":  "34da8e10cf31ade2b86b02e4f55c4d3b480a0992148ac12f9ec49eb7be4bfda0",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "ImmediatelyFast",
+                             "slug":  "immediatelyfast",
+                             "projectId":  686911,
+                             "fileName":  "ImmediatelyFast-Forge-1.5.4+1.20.4.jar",
+                             "fileDate":  "2026-01-27T21:06:43.76Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "ImmediatelyFast 1.5.4",
+                             "modIds":  [
+                                            "immediatelyfast"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client"
+                                                ],
+                             "installedSides":  [
+                                                    "Client"
+                                                ],
+                             "category":  "client-performance",
+                             "role":  "UI and rendering optimization",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/7537/759/ImmediatelyFast-Forge-1.5.4%2b1.20.4.jar",
+                             "sha256":  "da781a31b2c8d8a845ed48c89b6463f1df3f2c655de10d8d4f5bed8123ff68a8",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "AppleSkin",
+                             "slug":  "appleskin",
+                             "projectId":  248787,
+                             "fileName":  "appleskin-forge-mc1.20.1-2.5.1.jar",
+                             "fileDate":  "2023-09-27T04:39:49.087Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "appleskin-forge-mc1.20.1-2.5.1.jar",
+                             "modIds":  [
+                                            "appleskin"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client"
+                                                ],
+                             "installedSides":  [
+                                                    "Client"
+                                                ],
+                             "category":  "client-qol",
+                             "role":  "food value HUD",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/4770/828/appleskin-forge-mc1.20.1-2.5.1.jar",
+                             "sha256":  "e12419e43e3babc810af289403c5cd96bd7f09809b389acc6bb2f122b4b2a426",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "Jade 🔍",
+                             "slug":  "jade",
+                             "projectId":  324717,
+                             "fileName":  "Jade-1.20.1-Forge-11.13.2.jar",
+                             "fileDate":  "2025-08-06T14:19:52.7Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "[Forge 1.20.1] 11.13.2",
+                             "modIds":  [
+                                            "jade"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client"
+                                                ],
+                             "installedSides":  [
+                                                    "Client"
+                                                ],
+                             "category":  "client-qol",
+                             "role":  "block and entity tooltips",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/6855/440/Jade-1.20.1-Forge-11.13.2.jar",
+                             "sha256":  "31949971a7a8d5a5bc95ad9d400cbedfd2d65ffbfb3cea7c0b2fa3b47431a0a5",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "Just Enough Items (JEI)",
+                             "slug":  "jei",
+                             "projectId":  238222,
+                             "fileName":  "jei-1.20.1-forge-15.20.0.112.jar",
+                             "fileDate":  "2025-05-31T05:20:27.75Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "15.20.0.112 for Forge 1.20.1",
+                             "modIds":  [
+                                            "jei"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client"
+                                                ],
+                             "installedSides":  [
+                                                    "Client"
+                                                ],
+                             "category":  "client-qol",
+                             "role":  "recipe browsing",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/6600/311/jei-1.20.1-forge-15.20.0.112.jar",
+                             "sha256":  "2d3a86f503dbde51afa5142951525c37e227016ce8d9e7dfd10bbdd9233f0204",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "Xaero\u0027s Minimap",
+                             "slug":  "xaeros-minimap",
+                             "projectId":  263420,
+                             "fileName":  "xaerominimap-forge-1.20.1-25.3.13.jar",
+                             "fileDate":  "2026-05-06T07:39:52.09Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "forge-1.20.1-25.3.13.jar",
+                             "modIds":  [
+                                            "xaerominimap"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client"
+                                                ],
+                             "installedSides":  [
+                                                    "Client"
+                                                ],
+                             "category":  "client-qol",
+                             "role":  "navigation",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/8046/960/xaerominimap-forge-1.20.1-25.3.13.jar",
+                             "sha256":  "107a686c1a1637998c8ce7fa2262bb8c36f24277d6b2cf4b512a0b176ff41e89",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "Xaero\u0027s World Map",
+                             "slug":  "xaeros-world-map",
+                             "projectId":  317780,
+                             "fileName":  "xaeroworldmap-forge-1.20.1-1.40.16.jar",
+                             "fileDate":  "2026-05-05T08:33:05.35Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "forge-1.20.1-1.40.16.jar",
+                             "modIds":  [
+                                            "xaeroworldmap"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client"
+                                                ],
+                             "installedSides":  [
+                                                    "Client"
+                                                ],
+                             "category":  "client-qol",
+                             "role":  "full map",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/8042/194/xaeroworldmap-forge-1.20.1-1.40.16.jar",
+                             "sha256":  "49fbf2a0c91ca7e161b17f3b1784d4e798d0cd19f361ad3ebf6613e559f6371d",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "Advent of Ascension (Nevermine)",
+                             "slug":  "advent-of-ascension-nevermine",
+                             "projectId":  311054,
+                             "fileName":  "AoA3-1.20.1-3.7.1-all.jar",
+                             "fileDate":  "2023-12-28T03:59:08.297Z",
+                             "releaseType":  2,
+                             "versionDisplay":  "AoA3 1.20.1-3.7.1 (Beta)",
+                             "modIds":  [
+                                            "aoa3"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "dimensions",
+                             "role":  "large old-school adventure expansion with bosses, dimensions, mobs, and loot",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/4988/685/AoA3-1.20.1-3.7.1-all.jar",
+                             "sha256":  "f417ecb337d4a3b2aebec559a9262d8a86cc93ee7910f4eea64108bff063193a",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "Blue Skies",
+                             "slug":  "blue-skies",
+                             "projectId":  312918,
+                             "fileName":  "blue_skies-1.20.1-1.3.31.jar",
+                             "fileDate":  "2024-01-05T18:38:50.457Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "Blue Skies: Population 1.20.1-v1.3.31",
+                             "modIds":  [
+                                            "blue_skies"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "dimensions",
+                             "role":  "additional dimensions and bosses",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/5010/316/blue_skies-1.20.1-1.3.31.jar",
+                             "sha256":  "dda5351a7d75f8074e9878912140fd5ab2fe4e74d7678d4f9c52c0b86bce9748",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "Deeper and Darker",
+                             "slug":  "deeperdarker",
+                             "projectId":  659011,
+                             "fileName":  "deeperdarker-forge-1.20.1-1.3.3.jar",
+                             "fileDate":  "2024-11-15T19:53:35.52Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "v1.3.3 for Forge 1.20.1",
+                             "modIds":  [
+                                            "deeperdarker"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "dimensions",
+                             "role":  "deep dark adventure dimension with mobs, structures, and boss progression",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/5906/86/deeperdarker-forge-1.20.1-1.3.3.jar",
+                             "sha256":  "d07dc6155e0b751c7d1ec26dabb7284a41798c85e48b0d809fd1254e489ed455",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "Structure Gel API",
+                             "slug":  "structure-gel-api",
+                             "projectId":  378802,
+                             "fileName":  "structure_gel-1.20.1-2.16.2.jar",
+                             "fileDate":  "2024-04-21T03:47:31.577Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "Structure Gel 1.20.1-v2.16.2",
+                             "modIds":  [
+                                            "structure_gel"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "dimensions",
+                             "role":  "dependency",
+                             "required":  true,
+                             "dependencyOf":  "Blue Skies",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/5278/429/structure_gel-1.20.1-2.16.2.jar",
+                             "sha256":  "1584a5aed31c0f63e53c29d53cf4e069cdabf358e785240cc500702dc5918e3e",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "The Bumblezone (NeoForge/Forge)",
+                             "slug":  "the-bumblezone-forge",
+                             "projectId":  362479,
+                             "fileName":  "the_bumblezone-7.12.0+1.20.1-forge.jar",
+                             "fileDate":  "2026-05-30T00:28:46.763Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "The Bumblezone v7.12.0 (1.20.1 MC Forge)",
+                             "modIds":  [
+                                            "the_bumblezone"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "dimensions",
+                             "role":  "hostile dimension exploration",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/8167/41/the_bumblezone-7.12.0%2b1.20.1-forge.jar",
+                             "sha256":  "514ae31ade77c69f939e824149fa91821ef1fa721df08dd9ca091ca32a3fddb7",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "The Twilight Forest",
+                             "slug":  "the-twilight-forest",
+                             "projectId":  227639,
+                             "fileName":  "twilightforest-1.20.1-4.3.2508-universal.jar",
+                             "fileDate":  "2024-06-24T18:35:07.257Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "Twilight Forest - MC 1.20.1 - 4.3.2508",
+                             "modIds":  [
+                                            "twilightforest"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "dimensions",
+                             "role":  "major adventure dimension",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/5468/648/twilightforest-1.20.1-4.3.2508-universal.jar",
+                             "sha256":  "0bdc89263616d1b35c32ef82c5e9c14cbd20368e2fe8b468c72a28320be7a778",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "The Undergarden",
+                             "slug":  "the-undergarden",
+                             "projectId":  379849,
+                             "fileName":  "The_Undergarden-1.20.1-0.8.14.jar",
+                             "fileDate":  "2024-03-14T18:43:26.953Z",
+                             "releaseType":  2,
+                             "versionDisplay":  "The Undergarden 0.8.14",
+                             "modIds":  [
+                                            "undergarden"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "dimensions",
+                             "role":  "underground dimension with hostile mobs, loot, and exploration progression",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/5182/632/The_Undergarden-1.20.1-0.8.14.jar",
+                             "sha256":  "43029e388ab455f8c9bcfc8653b9a57a3eb1ff6b435cf6e58722d2d4c50d2444",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "Dungeon Crawl",
+                             "slug":  "dungeon-crawl",
+                             "projectId":  324973,
+                             "fileName":  "Dungeon Crawl-1.20.1-2.3.15.jar",
+                             "fileDate":  "2025-01-02T22:25:10.21Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "mc1.20.1-2.3.15",
+                             "modIds":  [
+                                            "dungeoncrawl"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Server"
+                                                ],
+                             "category":  "dungeons",
+                             "role":  "additional dungeon generation",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/6047/153/Dungeon%20Crawl-1.20.1-2.3.15.jar",
+                             "sha256":  "71e1b8ceaf20c3102ae42ef2761ca47f30fe4cbd20ecbb687df2ce75d1785514",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "Dungeon Now Loading 2%",
+                             "slug":  "dungeon-now-loading",
+                             "projectId":  638535,
+                             "fileName":  "Dungeon Now Loading-forge-1.20.1-2.2.jar",
+                             "fileDate":  "2026-05-02T00:53:53.883Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "Dungeon Now Loading 2.2% (Forge)",
+                             "modIds":  [
+                                            "dungeonnowloading"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "dungeons",
+                             "role":  "additional dungeon structures and exploration rewards",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/8023/973/Dungeon%20Now%20Loading-forge-1.20.1-2.2.jar",
+                             "sha256":  "287b6ddbf4eceac67607114ee03b4bc08f7c355dfe7d1c2193f6ae884ec0c2f3",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "YUNG\u0027s Better Dungeons (Forge/NeoForge)",
+                             "slug":  "yungs-better-dungeons",
+                             "projectId":  510089,
+                             "fileName":  "YungsBetterDungeons-1.20-Forge-4.0.4.jar",
+                             "fileDate":  "2024-04-18T05:10:09.167Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "[1.20] YUNG\u0027s Better Dungeons v4.0.4 (Forge)",
+                             "modIds":  [
+                                            "betterdungeons"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "dungeons",
+                             "role":  "more substantial dungeons",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/5271/360/YungsBetterDungeons-1.20-Forge-4.0.4.jar",
+                             "sha256":  "93c24e4075c51da0866f3fc92322bdb60e590ac2cd78dce275460839c54c36f5",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "YUNG\u0027s Better Strongholds (Forge/NeoForge)",
+                             "slug":  "yungs-better-strongholds",
+                             "projectId":  465575,
+                             "fileName":  "YungsBetterStrongholds-1.20-Forge-4.0.3.jar",
+                             "fileDate":  "2023-09-25T20:59:25.073Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "[1.20] YUNG\u0027s Better Strongholds v4.0.3 (Forge)",
+                             "modIds":  [
+                                            "betterstrongholds"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "dungeons",
+                             "role":  "improved strongholds",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/4769/83/YungsBetterStrongholds-1.20-Forge-4.0.3.jar",
+                             "sha256":  "054b0a1be86510ed6bd05de66a29200f13f5603c0c9eb7e62074ddc3d19cb0e4",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "ProjectE",
+                             "slug":  "projecte",
+                             "projectId":  226410,
+                             "fileName":  "ProjectE-1.20.1-PE1.0.1.jar",
+                             "fileDate":  "2023-11-26T09:21:42.017Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "ProjectE-1.20.1-PE1.0.1.jar",
+                             "modIds":  [
+                                            "projecte"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "exchange",
+                             "role":  "required progression identity",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/4901/949/ProjectE-1.20.1-PE1.0.1.jar",
+                             "sha256":  "f51f387e56307e7cda26915ca0c789760d85e97a8b40b8bfa0988be66371d018",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "Apotheosis",
+                             "slug":  "apotheosis",
+                             "projectId":  313970,
+                             "fileName":  "Apotheosis-1.20.1-7.4.8.jar",
+                             "fileDate":  "2025-04-25T05:20:15.39Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "Apotheosis-1.20.1-7.4.8.jar",
+                             "modIds":  [
+                                            "apotheosis"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "loot",
+                             "role":  "boss-style affix mobs, gem systems, stronger loot, and deeper enchantment progression",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/6461/960/Apotheosis-1.20.1-7.4.8.jar",
+                             "sha256":  "5ed8c17cf62837bb649d1054e3e4fe93c4d9bdec98fe9f332e2637a260da30da",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "Apothic Attributes",
+                             "slug":  "apothic-attributes",
+                             "projectId":  898963,
+                             "fileName":  "ApothicAttributes-1.20.1-1.3.7.jar",
+                             "fileDate":  "2024-08-16T06:08:35.217Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "ApothicAttributes-1.20.1-1.3.7.jar",
+                             "modIds":  [
+                                            "attributeslib"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "loot",
+                             "role":  "dependency",
+                             "required":  true,
+                             "dependencyOf":  "Apotheosis",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/5634/71/ApothicAttributes-1.20.1-1.3.7.jar",
+                             "sha256":  "68487b11c0d4e2f67a85f2b04bf65e99ac15294f2923f4391f83e9542293187a",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "Patchouli",
+                             "slug":  "patchouli",
+                             "projectId":  306770,
+                             "fileName":  "Patchouli-1.20.1-85-FORGE.jar",
+                             "fileDate":  "2026-03-08T21:08:44.413Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "Patchouli-1.20.1-85-FORGE.jar",
+                             "modIds":  [
+                                            "patchouli"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "loot",
+                             "role":  "dependency",
+                             "required":  true,
+                             "dependencyOf":  "Apotheosis",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/7731/17/Patchouli-1.20.1-85-FORGE.jar",
+                             "sha256":  "05f7b5d52f6b8f0fd7f8b4822fa07a192d1394d83a264309c9d221d6d4fd21c5",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "Placebo",
+                             "slug":  "placebo",
+                             "projectId":  283644,
+                             "fileName":  "Placebo-1.20.1-8.6.3.jar",
+                             "fileDate":  "2025-03-07T09:06:06.367Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "Placebo-1.20.1-8.6.3.jar",
+                             "modIds":  [
+                                            "placebo"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "loot",
+                             "role":  "dependency",
+                             "required":  true,
+                             "dependencyOf":  "Apotheosis",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/6274/231/Placebo-1.20.1-8.6.3.jar",
+                             "sha256":  "1cdf906cfbcbb5e5be2ef1bb721f79a24b01bd2ac559c8cdbfb7693f62421571",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "Alex\u0027s Caves",
+                             "slug":  "alexs-caves",
+                             "projectId":  924854,
+                             "fileName":  "alexscaves-2.0.2.jar",
+                             "fileDate":  "2024-10-26T17:18:54.087Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "alexscaves-2.0.2",
+                             "modIds":  [
+                                            "alexscaves"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "mobs",
+                             "role":  "large exploration biomes with dangerous mobs, set-piece loot, and adventure gear",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/5848/216/alexscaves-2.0.2.jar",
+                             "sha256":  "131e205ce3eed384d701b336d8a0d4a671108ed56b6eff6014f0e407db2997f0",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "Alex\u0027s Mobs",
+                             "slug":  "alexs-mobs",
+                             "projectId":  426558,
+                             "fileName":  "alexsmobs-1.22.9.jar",
+                             "fileDate":  "2024-09-06T21:38:23.41Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "alexsmobs-1.22.9",
+                             "modIds":  [
+                                            "alexsmobs"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "mobs",
+                             "role":  "creatures and combat variety",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/5698/791/alexsmobs-1.22.9.jar",
+                             "sha256":  "16bc5bcc19db9029c24f951346ec71098e6f5b0afef96e61894a2e9407aad37c",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "Born in Chaos",
+                             "slug":  "born-in-chaos",
+                             "projectId":  686437,
+                             "fileName":  "born_in_chaos_[Forge]1.20.1_1.7.5.jar",
+                             "fileDate":  "2026-04-12T21:16:25.77Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "born_in_chaos_[Forge]1.20.1_1.7.5.jar",
+                             "modIds":  [
+                                            "born_in_chaos_v1"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "mobs",
+                             "role":  "OreSpawn-like hostile mobs, mini-bosses, gear, and chaotic encounters",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/7917/933/born_in_chaos_%5bForge%5d1.20.1_1.7.5.jar",
+                             "sha256":  "9f242f4f3330f3d0d985f5f3ce9a92fe09016ff9c6162252f201d17009b28d7d",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "Citadel",
+                             "slug":  "citadel",
+                             "projectId":  331936,
+                             "fileName":  "citadel-2.6.3-1.20.1.jar",
+                             "fileDate":  "2026-01-17T18:16:34.157Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "citadel-2.6.3-1.20.1",
+                             "modIds":  [
+                                            "citadel"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "mobs",
+                             "role":  "Alex\u0027s Mobs dependency pinned explicitly for server compatibility",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/7476/570/citadel-2.6.3-1.20.1.jar",
+                             "sha256":  "56c7ab87348a5292583aac787b6cf11b5193e77f02af1d17ea75a96f8640b3ce",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "Illager Invasion",
+                             "slug":  "illager-invasion",
+                             "projectId":  891324,
+                             "fileName":  "IllagerInvasion-v8.0.7-1.20.1-Forge.jar",
+                             "fileDate":  "2025-02-14T15:17:12.07Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "[FORGE] [1.20.1] IllagerInvasion-v8.0.7",
+                             "modIds":  [
+                                            "illagerinvasion"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "mobs",
+                             "role":  "expanded hostile illagers and raid-style combat variety",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/6192/869/IllagerInvasion-v8.0.7-1.20.1-Forge.jar",
+                             "sha256":  "790d52067b30e85ff0dcc4131cf709f9f45c619bdc6b6ff11ed8ac4e3f61acda",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "The Graveyard (FORGE/NEOFORGE)",
+                             "slug":  "the-graveyard-forge",
+                             "projectId":  531188,
+                             "fileName":  "The_Graveyard_3.1_(FORGE)_for_1.20.1.jar",
+                             "fileDate":  "2024-02-17T10:25:42.403Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "The Graveyard 3.1 (FORGE) for 1.20.1",
+                             "modIds":  [
+                                            "graveyard"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "mobs",
+                             "role":  "undead mobs, graveyard structures, bosses, and spooky exploration loot",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/5114/579/The_Graveyard_3.1_(FORGE)_for_1.20.1.jar",
+                             "sha256":  "f26aace5460890b9a46094586530708517b58fc1e8752055882fd4f03912f07d",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "Chunky (Forge/NeoForge)",
+                             "slug":  "chunky-pregenerator-forge",
+                             "projectId":  485681,
+                             "fileName":  "Chunky-1.3.146.jar",
+                             "fileDate":  "2024-05-06T07:10:57.567Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "Chunky 1.3.146",
+                             "modIds":  [
+                                            "chunky"
+                                        ],
+                             "requestedSides":  [
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Server"
+                                                ],
+                             "category":  "performance",
+                             "role":  "pregeneration",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/5320/28/Chunky-1.3.146.jar",
+                             "sha256":  "996a3c9b53e6c0e0850fb9e78d3546d2c37a1b789ddaf529b17e4fe62ab23141",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "Clumps",
+                             "slug":  "clumps",
+                             "projectId":  256717,
+                             "fileName":  "Clumps-forge-1.20.1-12.0.0.4.jar",
+                             "fileDate":  "2024-04-21T05:04:02.807Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "Clumps-forge-1.20.1-12.0.0.4.jar",
+                             "modIds":  [
+                                            "clumps"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "performance",
+                             "role":  "XP orb consolidation",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/5278/538/Clumps-forge-1.20.1-12.0.0.4.jar",
+                             "sha256":  "1d1cfcf386f182b1d0bdbe4bd4fc57b96234e8c7468e95e1575ad4dd6433243a",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "FerriteCore ((Neo)Forge)",
+                             "slug":  "ferritecore",
+                             "projectId":  429235,
+                             "fileName":  "ferritecore-6.0.1-forge.jar",
+                             "fileDate":  "2023-10-22T13:35:16.597Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "ferritecore-6.0.1-forge.jar",
+                             "modIds":  [
+                                            "ferritecore"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "performance",
+                             "role":  "memory reduction",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/4810/975/ferritecore-6.0.1-forge.jar",
+                             "sha256":  "9c2c9396a49e796d88497758caa4637d2bcbb433c318e2dd9cebcffbaf0f6c54",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "ModernFix",
+                             "slug":  "modernfix",
+                             "projectId":  790626,
+                             "fileName":  "modernfix-forge-5.27.44+mc1.20.1.jar",
+                             "fileDate":  "2026-06-05T01:10:37.583Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "modernfix-forge-5.27.44+mc1.20.1.jar",
+                             "modIds":  [
+                                            "modernfix"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "performance",
+                             "role":  "startup and memory fixes",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/8198/700/modernfix-forge-5.27.44%2bmc1.20.1.jar",
+                             "sha256":  "e0be1a2aec23ed025ba29afff70c6a37cbd0b95c88ac98f33ff4b79452f458f2",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "spark",
+                             "slug":  "spark",
+                             "projectId":  361579,
+                             "fileName":  "spark-1.10.53-forge.jar",
+                             "fileDate":  "2023-09-05T08:02:20.05Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "1.10.53 (Forge 1.20.1)",
+                             "modIds":  [
+                                            "spark"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "performance",
+                             "role":  "profiling",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/4738/952/spark-1.10.53-forge.jar",
+                             "sha256":  "eba275ba9bb0cb5b542913c3138c6eeff6a752898266d63d125d185f26ac99ed",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "Balm",
+                             "slug":  "balm",
+                             "projectId":  531761,
+                             "fileName":  "balm-forge-1.20.1-7.3.38-all.jar",
+                             "fileDate":  "2026-01-05T11:43:31.017Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "balm-forge-1.20.1-7.3.38-all.jar",
+                             "modIds":  [
+                                            "balm"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "qol",
+                             "role":  "dependency",
+                             "required":  true,
+                             "dependencyOf":  "Waystones",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/7420/617/balm-forge-1.20.1-7.3.38-all.jar",
+                             "sha256":  "cbe8008218f0f574bc1f78b532cac5f978c33bf36ae2e14805340eab445fdb08",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "Corail Tombstone",
+                             "slug":  "corail-tombstone",
+                             "projectId":  243707,
+                             "fileName":  "tombstone-1.20.1-9.0.10.jar",
+                             "fileDate":  "2026-04-20T18:16:37.44Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "Corail Tombstone 9.0.10 for 1.20.1",
+                             "modIds":  [
+                                            "tombstone"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "qol",
+                             "role":  "death recovery",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/7957/377/tombstone-1.20.1-9.0.10.jar",
+                             "sha256":  "14b4be93c4be496c21819e59be8ecc197fa72408e09485b4d718cfc1681a8a84",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "Simple Voice Chat",
+                             "slug":  "simple-voice-chat",
+                             "projectId":  416089,
+                             "fileName":  "voicechat-forge-1.20.1-2.6.18.jar",
+                             "fileDate":  "2026-05-28T08:05:03.44Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "[FORGE][1.20.1] Simple Voice Chat 1.20.1-2.6.18",
+                             "modIds":  [
+                                            "voicechat",
+                                            "voicechat_api"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "qol",
+                             "role":  "social feature",
+                             "required":  false,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/8158/492/voicechat-forge-1.20.1-2.6.18.jar",
+                             "sha256":  "bd677c153b140263c007de7e06545dbd1cdd1084812fd02241db8ba5c5055b3f",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "Waystones",
+                             "slug":  "waystones",
+                             "projectId":  245755,
+                             "fileName":  "waystones-forge-1.20.1-14.1.20.jar",
+                             "fileDate":  "2026-02-26T17:34:59.147Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "waystones-forge-1.20.1-14.1.20.jar",
+                             "modIds":  [
+                                            "waystones"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "qol",
+                             "role":  "travel and regrouping",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/7682/270/waystones-forge-1.20.1-14.1.20.jar",
+                             "sha256":  "5ecc6535596b5954f6293224be6b35805c64f4d4aedc2b9e32d9508dd529cabd",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "It Takes a Pillage",
+                             "slug":  "it-takes-a-pillage",
+                             "projectId":  635843,
+                             "fileName":  "takesapillage-1.0.3-1.20.1.jar",
+                             "fileDate":  "2023-12-24T22:04:11.55Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "It Takes a Pillage v1.0.3 [1.20.1]",
+                             "modIds":  [
+                                            "takesapillage"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "structures",
+                             "role":  "pillager camps, patrol structures, hostile encounters, and loot",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/4981/343/takesapillage-1.0.3-1.20.1.jar",
+                             "sha256":  "b8ebc7ea467637dc918ffa9c8eaa273f8723e6e81be93cf5f69618f8072baa11",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "Repurposed Structures (Neoforge/Forge)",
+                             "slug":  "repurposed-structures",
+                             "projectId":  368293,
+                             "fileName":  "repurposed_structures-7.1.23+1.20.1-forge.jar",
+                             "fileDate":  "2026-04-23T11:13:11.94Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "Repurposed Structures v7.1.23 (1.20.1 MC Forge)",
+                             "modIds":  [
+                                            "repurposed_structures"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "structures",
+                             "role":  "overworld and dimension structure density",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/7971/681/repurposed_structures-7.1.23%2b1.20.1-forge.jar",
+                             "sha256":  "cdb099d1724c9a1423f3bfadfd6e9db0d3cefef11c651ea3625d0efed4ded35e",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "When Dungeons Arise - Forge!",
+                             "slug":  "when-dungeons-arise",
+                             "projectId":  442508,
+                             "fileName":  "DungeonsArise-1.20.x-2.1.58-release.jar",
+                             "fileDate":  "2023-12-26T06:42:43.993Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "DungeonsArise-1.20.x-2.1.58-release.jar",
+                             "modIds":  [
+                                            "dungeons_arise"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "structures",
+                             "role":  "large exploration structures",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/4983/862/DungeonsArise-1.20.x-2.1.58-release.jar",
+                             "sha256":  "f8f1254dbe7ed7c1d5403f20361a36f0d0587c82b71313e3f427c7f1ce7c8a90",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "When Dungeons Arise - Seven Seas",
+                             "slug":  "when-dungeons-arise-seven-seas",
+                             "projectId":  953637,
+                             "fileName":  "DungeonsAriseSevenSeas-1.20.x-1.0.2-forge.jar",
+                             "fileDate":  "2023-12-24T22:21:46.467Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "[FORGE] DungeonsAriseSevenSeas-1.20.x-1.0.2-forge",
+                             "modIds":  [
+                                            "dungeons_arise_seven_seas"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "structures",
+                             "role":  "large ocean structures and sea adventure loot",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/4981/380/DungeonsAriseSevenSeas-1.20.x-1.0.2-forge.jar",
+                             "sha256":  "4d8b2ee057d08cf13be96d05a08fc933e835d6c36395c692662871d4a1319be2",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "YUNG\u0027s API (Forge/NeoForge)",
+                             "slug":  "yungs-api",
+                             "projectId":  421850,
+                             "fileName":  "YungsApi-1.20-Forge-4.0.6.jar",
+                             "fileDate":  "2024-09-30T06:13:49.387Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "[1.20] YUNG\u0027s API v4.0.6 (Forge)",
+                             "modIds":  [
+                                            "yungsapi"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "structures",
+                             "role":  "dependency base for YUNG structure mods",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/5769/971/YungsApi-1.20-Forge-4.0.6.jar",
+                             "sha256":  "101c30d01d0cf9d86190f578eb1e43bd06b64092e95662a00ef52946f472c7b1",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "Iron\u0027s Lib",
+                             "slug":  "irons-lib",
+                             "projectId":  1492763,
+                             "fileName":  "irons_lib-1.20.1-1.0.2.1.jar",
+                             "fileDate":  "2026-05-27T21:14:04.943Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "irons_lib-1.20.1-1.0.2.1.jar",
+                             "modIds":  [
+                                            "irons_lib"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "weapons",
+                             "role":  "dependency",
+                             "required":  true,
+                             "dependencyOf":  "Iron\u0027s Spells \u0027n Spellbooks",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/8156/266/irons_lib-1.20.1-1.0.2.1.jar",
+                             "sha256":  "b1b47a32120e7b85e9fded6ad7d5be2275e1b10b2966f1572a15fdc7b0ee57e8",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "Iron\u0027s Spells \u0027n Spellbooks",
+                             "slug":  "irons-spells-n-spellbooks",
+                             "projectId":  855414,
+                             "fileName":  "irons_spellbooks-1.20.1-3.16.0.jar",
+                             "fileDate":  "2026-06-05T19:53:33.93Z",
+                             "releaseType":  1,
+                             "versionDisplay":  "v1.20.1-3.16.0",
+                             "modIds":  [
+                                            "irons_spellbooks"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "weapons",
+                             "role":  "active spell weapons, spell loot, progression gear, and magical combat",
+                             "required":  true,
+                             "dependencyOf":  "",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/8202/274/irons_spellbooks-1.20.1-3.16.0.jar",
+                             "sha256":  "10d2894302aa2922379ea3efae99d33daa4025f3446b5a3e26ab7ed185f94462",
+                             "status":  "installed"
+                         },
+                         {
+                             "name":  "playerAnimator",
+                             "slug":  "playeranimator",
+                             "projectId":  658587,
+                             "fileName":  "player-animation-lib-forge-1.0.2-rc1+1.20.jar",
+                             "fileDate":  "2023-06-14T20:01:58.627Z",
+                             "releaseType":  2,
+                             "versionDisplay":  "player-animation-lib-forge-1.0.2-rc1+1.20.jar",
+                             "modIds":  [
+                                            "playeranimator"
+                                        ],
+                             "requestedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "installedSides":  [
+                                                    "Client",
+                                                    "Server"
+                                                ],
+                             "category":  "weapons",
+                             "role":  "dependency",
+                             "required":  true,
+                             "dependencyOf":  "Iron\u0027s Spells \u0027n Spellbooks",
+                             "source":  "CurseForge API via curse.tools",
+                             "downloadUrl":  "https://edge.forgecdn.net/files/4587/214/player-animation-lib-forge-1.0.2-rc1%2b1.20.jar",
+                             "sha256":  "90d9965cb9efdbda29fdc5610be3914cf7008bf5c392ff34f7ab25f96a852691",
+                             "status":  "installed"
+                         }
+                     ],
+    "serverBootstrap":  {
+                            "forgeInstaller":  {
+                                                   "minecraft":  "1.20.1",
+                                                   "forgeVersion":  "47.4.0",
+                                                   "fileName":  "forge-1.20.1-47.4.0-installer.jar",
+                                                   "url":  "https://maven.minecraftforge.net/net/minecraftforge/forge/1.20.1-47.4.0/forge-1.20.1-47.4.0-installer.jar",
+                                                   "sha256":  "f3f57465e2cbdc328193f77ba7f0c94cb64405f31ed556753d9275e8bdc06e2c",
+                                                   "source":  "Forge Maven"
+                                               }
+                        },
+    "lastResolvedAt":  "2026-06-05T22:28:29.0079178Z"
+}

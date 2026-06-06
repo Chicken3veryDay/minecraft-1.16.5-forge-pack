@@ -27,6 +27,10 @@ $clientRequiredServerMods = @(
     'inventorysorter-1.16.1-18.1.0.jar'
 )
 
+$runtimeCrashMods = @(
+    'inventorypets-1.16.5-2.2.jar'
+)
+
 function Ensure-Directory {
     param([string]$Path)
     if (-not (Test-Path -LiteralPath $Path)) {
@@ -77,6 +81,12 @@ foreach ($name in $serverRequiredClientMods) {
 
 foreach ($name in $clientRequiredServerMods) {
     Copy-RequiredJar -Source (Join-Path $ClientDir $name) -DestinationDir $ServerDir
+}
+
+foreach ($name in $runtimeCrashMods) {
+    foreach ($folder in @($ClientDir, $ServerDir)) {
+        Move-ToBackupIfPresent -Path (Join-Path $folder $name) -Reason 'removed-ticking-player-crash'
+    }
 }
 
 $mowzieNew = Join-Path $CurseForgeCache 'mowziesmobs-1.5.27.jar'

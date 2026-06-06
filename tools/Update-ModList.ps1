@@ -1,114 +1,74 @@
 [CmdletBinding()]
-param(
-    [string]$Root,
-    [string]$OutputPath,
-    [string]$SourceNote = 'Client files are resolved from the exact Crazy Craft Updated 0.12.9 CurseForge manifest file IDs. Server files come from the official Crazy Craft Updated 0.12.9 server pack with enhanced_boss_bars removed because it loads client Minecraft classes on a dedicated server.',
-    [string]$ValidationNote = 'Release assets are generated from verified source ZIPs and checked by SHA-256 before upload. The client contains 331 exact manifest jars; the server payload is the official server pack tree minus the VPS-proven server-incompatible Enhanced Boss Bars jar.',
-    [string[]]$AdditionalNotes = @()
-)
+param()
 
 $ErrorActionPreference = 'Stop'
 
-if ([string]::IsNullOrWhiteSpace($Root)) {
-    $Root = Split-Path -Parent $PSScriptRoot
-}
-if ([string]::IsNullOrWhiteSpace($OutputPath)) {
-    $OutputPath = Join-Path $Root 'MODLIST.md'
-}
+$Root = Split-Path -Parent $PSScriptRoot
+$BlueprintPath = Join-Path $Root 'pack-sources\pack-blueprint.json'
+$OutputPath = Join-Path $Root 'MODLIST.md'
 
-$manifestPath = Join-Path $Root '.pack-manifest.json'
-$minimalZipPath = Join-Path $Root 'minimal-pack.zip'
-if (-not (Test-Path -LiteralPath $manifestPath)) {
-    throw "Missing manifest: $manifestPath"
+if (-not (Test-Path -LiteralPath $BlueprintPath)) {
+    throw "Missing blueprint: $BlueprintPath"
 }
 
-$manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+$blueprint = Get-Content -LiteralPath $BlueprintPath -Raw | ConvertFrom-Json
+$lines = @()
 
-function Get-FileHashSha256 {
-    param([string]$Path)
-    if (Get-Command Get-FileHash -ErrorAction SilentlyContinue) {
-        return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
-    }
-
-    $stream = [System.IO.File]::OpenRead($Path)
-    try {
-        $sha256 = [System.Security.Cryptography.SHA256]::Create()
-        try {
-            return (($sha256.ComputeHash($stream) | ForEach-Object { $_.ToString('x2') }) -join '')
-        }
-        finally {
-            $sha256.Dispose()
-        }
-    }
-    finally {
-        $stream.Dispose()
-    }
+$lines += '# Forge 1.20.1 ProjectE Chaos Pack'
+$lines += ''
+$lines += ('Generated inventory date: `{0}`' -f (Get-Date -Format yyyy-MM-dd))
+$lines += ''
+$lines += '## Pack Identity'
+$lines += ''
+$lines += ('- Project: ' + $blueprint.packName)
+$lines += ('- Loader default: `' + $blueprint.platform + '`')
+$lines += ('- Minecraft version: `' + $blueprint.minecraft + '`')
+$lines += ('- Forge version: `' + $blueprint.forgeVersion + '`')
+$lines += ('- Audience: ' + $blueprint.audience)
+$lines += ('- World policy: ' + $blueprint.worldPolicy)
+$lines += ('- Required identity: `' + $blueprint.requiredIdentity + '`')
+$lines += ('- Content strategy: ' + $blueprint.contentStrategy)
+$lines += ('- Disallowed pack pillars: `' + ($blueprint.disallowedPackPillars -join '`, `') + '`')
+$lines += ('- Host target: dedicated Linux + NVMe + `' + $blueprint.hostProfile.hostRam + '` RAM + `' + $blueprint.hostProfile.cpu + '`')
+$lines += ''
+$lines += '## Resolver Workflow'
+$lines += ''
+$lines += ('- Resolver: ' + $blueprint.sourceWorkflow.resolver)
+$lines += ('- Why not packwiz here: ' + $blueprint.sourceWorkflow.reason)
+$lines += ''
+$lines += '## Required Baseline Mods'
+$lines += ''
+$lines += '| Mod / Tool | Side | Status | Purpose |'
+$lines += '|---|---|---|---|'
+foreach ($item in @($blueprint.optimizationBaseline)) {
+    $lines += ('| `' + $item.name + '` | ' + $item.side + ' | ' + $item.status + ' | ' + $item.purpose + ' |')
 }
-
-$minimalHash = if (Test-Path -LiteralPath $minimalZipPath) {
-    Get-FileHashSha256 -Path $minimalZipPath
+$lines += ''
+$lines += '## Installed Mods'
+$lines += ''
+$lines += '| Name | Category | Installed sides | File | Role |'
+$lines += '|---|---|---|---|---|'
+foreach ($item in @($blueprint.resolvedMods | Sort-Object category, name)) {
+    $lines += ('| `' + $item.name + '` | ' + $item.category + ' | ' + ($item.installedSides -join ', ') + ' | `' + $item.fileName + '` | ' + $item.role + ' |')
+}
+$lines += ''
+$lines += '## Forge Server Bootstrap'
+$lines += ''
+if ($null -ne $blueprint.serverBootstrap -and $null -ne $blueprint.serverBootstrap.forgeInstaller) {
+    $installer = $blueprint.serverBootstrap.forgeInstaller
+    $lines += ('- Bundled installer: `' + $installer.fileName + '`')
+    $lines += ('- Source: ' + $installer.source)
+    $lines += ('- URL: ' + $installer.url)
 }
 else {
-    ''
+    $lines += '- Forge installer not yet resolved.'
 }
-$minimalName = if ($minimalHash) { "minimal-pack-$($minimalHash.Substring(0, 12)).zip" } else { 'minimal-pack.zip' }
+$lines += ''
+$lines += '## Notes'
+$lines += ''
+$lines += '- Shared mods are copied into both client and server deliverables.'
+$lines += '- Client-only mods stay out of the dedicated server staging path.'
+$lines += '- No large automation pillars such as Create, Mekanism, Applied Energistics, or Refined Storage are seeded in this pack.'
 
-function Add-FileTable {
-    param(
-        [System.Collections.Generic.List[string]]$Lines,
-        [string]$Title,
-        [object[]]$Files
-    )
-
-    $Lines.Add('') | Out-Null
-    $Lines.Add("## $Title ($(@($Files).Count))") | Out-Null
-    $Lines.Add('') | Out-Null
-    $Lines.Add('| File | Size | SHA-256 |') | Out-Null
-    $Lines.Add('|---|---:|---|') | Out-Null
-    foreach ($file in @($Files | Sort-Object name)) {
-        $Lines.Add("| ``$($file.name)`` | $($file.size) | ``$($file.sha256)`` |") | Out-Null
-    }
-}
-
-$lines = [System.Collections.Generic.List[string]]::new()
-$lines.Add('# Crazy Craft Updated 0.12.9 File List') | Out-Null
-$lines.Add('') | Out-Null
-$lines.Add("Generated: $((Get-Date).ToUniversalTime().ToString('o'))") | Out-Null
-$lines.Add('') | Out-Null
-$lines.Add('## Release') | Out-Null
-$lines.Add('') | Out-Null
-$lines.Add("- Minecraft: $($manifest.minecraft)") | Out-Null
-$lines.Add("- Forge: $($manifest.forge)") | Out-Null
-$lines.Add("- Asset archive: ``$($manifest.assetArchive.name)``") | Out-Null
-$lines.Add("- Asset SHA-256: ``$($manifest.assetArchive.sha256)``") | Out-Null
-$lines.Add("- Asset URL: <$($manifest.assetArchive.url)>") | Out-Null
-$lines.Add("- Minimal installer: ``$minimalName``") | Out-Null
-if ($minimalHash) {
-    $lines.Add("- Minimal installer SHA-256: ``$minimalHash``") | Out-Null
-}
-$lines.Add("- Source: $SourceNote") | Out-Null
-$lines.Add("- Validation: $ValidationNote") | Out-Null
-foreach ($note in @($AdditionalNotes)) {
-    if (-not [string]::IsNullOrWhiteSpace($note)) {
-        $lines.Add("- Note: $note") | Out-Null
-    }
-}
-
-Add-FileTable -Lines $lines -Title 'Client Mods' -Files @($manifest.client)
-
-if (@($manifest.config).Count -gt 0) {
-    Add-FileTable -Lines $lines -Title 'Config Files' -Files @($manifest.config)
-}
-
-if (@($manifest.root).Count -gt 0) {
-    Add-FileTable -Lines $lines -Title 'Root Override Files' -Files @($manifest.root)
-}
-
-if (@($manifest.shaderpacks).Count -gt 0) {
-    Add-FileTable -Lines $lines -Title 'Shaderpacks' -Files @($manifest.shaderpacks)
-}
-
-Add-FileTable -Lines $lines -Title 'Server Files' -Files @($manifest.server)
-
-Set-Content -LiteralPath $OutputPath -Value $lines -Encoding UTF8
-Write-Host "Updated $OutputPath"
+$lines | Set-Content -LiteralPath $OutputPath -Encoding UTF8
+Write-Host ('Updated ' + $OutputPath)
